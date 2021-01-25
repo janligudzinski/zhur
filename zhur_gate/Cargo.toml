@@ -1,0 +1,16 @@
+[package]
+name = "zhur_gate"
+description = "Zhur HTTP gateway"
+version = "0.1.0"
+authors = ["oreganoli <3611916+oreganoli@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zhur_common = { path = "../zhur_common" }
+zhur_invk = { path = "../zhur_invk" }
+http = { version = "0.2.3" }
+hyper = { version = "0.14.2", features = ["full"] }
+tokio = { version = "1.0.1", features = ["full"] }
+serde = { version = "1.0.118", features = ["derive"] }
