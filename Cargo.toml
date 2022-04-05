@@ -1,3 +1,0 @@
-[workspace]
-members = ["zhur_common", "zhur_gate", "zhur_invk", "zhur_core", "zhur_sdk", "zhur_portal", "zhur_apst", "zhur_kv"]
-exclude = ["examples/echo"]

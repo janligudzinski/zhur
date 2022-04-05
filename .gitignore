@@ -1,7 +1,0 @@
-target/
-/target
-.pijul
-.pijul/**/*
-*.sled
-*.sled/**/*
-node_modules/

@@ -6,7 +6,6 @@ Zhur [ʐur], named after [the soup](https://en.wikipedia.org/wiki/West_Slavic_fe
 
 ## User features (WIP):
 
-- [X] HTTP request handling
-- [X] Built-in key-value store for quick data access
+- [ ] HTTP request handling
+- [ ] Built-in key-value store for quick data access
 - [ ] App management portal
-- [X] Use any language with waPC support to write your apps (SDK available only for Rust)
