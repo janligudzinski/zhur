@@ -1,8 +1,6 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+/// Error types.
+pub mod errors;
+/// Module for IPC communication between Zhur modules.
+pub mod ipc;
+// Reexports for other crates.
+pub use {bincode, serde, tokio};
