@@ -45,6 +45,7 @@ impl Invocation {
     }
 }
 /// An arbitrary JSON response from the app engine. Currently the only supported type.
+#[derive(Deserialize, Serialize)]
 pub struct JsonResponse {
     pub ctx: InvocationContext,
     pub payload: String,

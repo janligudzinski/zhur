@@ -5,4 +5,6 @@ pub mod invoke;
 /// Module for IPC communication between Zhur modules.
 pub mod ipc;
 // Reexports for other crates.
-pub use {bincode, serde, tokio};
+pub mod prelude {
+    pub use {bincode, log, serde, tokio};
+}
