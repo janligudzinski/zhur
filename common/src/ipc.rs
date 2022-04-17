@@ -22,6 +22,8 @@ impl UnixServer {
         }
     }
     pub async fn get_request<Req: DeserializeOwned>(&mut self) -> Result<Req, IpcError> {
+        trace!("Clearing request read buffer.");
+        self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
         trace!("Awaiting readable stream...");
         self.stream.readable().await?;
         trace!("Stream readable.");
@@ -46,8 +48,6 @@ impl UnixServer {
                 Err(IpcError::RequestDeserialization)
             }
         };
-        trace!("Clearing buffer.");
-        self.buf.clear();
         result
     }
     pub async fn send_response<Res: Serialize>(&mut self, response: &Res) -> Result<(), IpcError> {
@@ -92,6 +92,8 @@ impl UnixClient {
         &mut self,
         request: &Req,
     ) -> Result<Res, IpcError> {
+        trace!("Clearing response read buffer.");
+        self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
         trace!("Awaiting writable stream...");
         self.stream.writable().await?;
         trace!("Stream writable.");
@@ -137,7 +139,6 @@ impl UnixClient {
                 Err(IpcError::ResponseDeserialization)
             }
         };
-        self.buf.clear();
         result
     }
 }
