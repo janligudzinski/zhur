@@ -1,3 +1,4 @@
+use log::*;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -21,29 +22,54 @@ impl UnixServer {
         }
     }
     pub async fn get_request<Req: DeserializeOwned>(&mut self) -> Result<Req, IpcError> {
+        trace!("Awaiting readable stream...");
         self.stream.readable().await?;
+        trace!("Stream readable.");
         let len = match self.stream.read(&mut self.buf).await {
-            Ok(0) => return Err(IpcError::ClientDisconnected),
-            Ok(l) => l,
-            Err(e) => return Err(e.into()),
+            Ok(0) => {
+                warn!("Read 0, client disconnected.");
+                return Err(IpcError::ClientDisconnected);
+            }
+            Ok(l) => {
+                trace!("Read request of length {}B", l);
+                l
+            }
+            Err(e) => {
+                error!("IO error while reading request: {}", e);
+                return Err(e.into());
+            }
         };
         let result = match bincode::deserialize::<Req>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
-            Err(_) => Err(IpcError::RequestDeserialization),
+            Err(_) => {
+                error!("Could not deserialize request type.");
+                Err(IpcError::RequestDeserialization)
+            }
         };
+        trace!("Clearing buffer.");
         self.buf.clear();
         result
     }
     pub async fn send_response<Res: Serialize>(&mut self, response: &Res) -> Result<(), IpcError> {
+        trace!("Awaiting writable stream...");
         self.stream.writable().await?;
+        trace!("Stream writable.");
         let response_bytes = match bincode::serialize(response) {
             Ok(v) => v,
-            Err(_) => return Err(IpcError::ResponseSerialization),
+            Err(_) => {
+                error!("Could not serialize response.");
+                return Err(IpcError::ResponseSerialization);
+            }
         };
-        match self.stream.write(&response_bytes).await {
-            Ok(0) => Err(IpcError::ClientDisconnected),
-            Ok(_) => Ok(()),
-            Err(e) => Err(e.into()),
+        match self.stream.write_all(&response_bytes).await {
+            Ok(_) => {
+                trace!("Wrote a response.");
+                Ok(())
+            }
+            Err(e) => {
+                error!("IO error while writing response: {}", e);
+                Err(e.into())
+            }
         }
     }
 }
@@ -66,25 +92,50 @@ impl UnixClient {
         &mut self,
         request: &Req,
     ) -> Result<Res, IpcError> {
+        trace!("Awaiting writable stream...");
         self.stream.writable().await?;
+        trace!("Stream writable.");
         let request_bytes = match bincode::serialize(request) {
             Ok(v) => v,
-            Err(_) => return Err(IpcError::RequestSerialization),
+            Err(_) => {
+                error!("Could not serialize request");
+                return Err(IpcError::RequestSerialization);
+            }
         };
         match self.stream.write(&request_bytes).await {
-            Ok(0) => return Err(IpcError::ServerDisconnected),
+            Ok(0) => {
+                error!("Server disconnected while writing response.");
+                return Err(IpcError::ServerDisconnected);
+            }
             Ok(_) => (),
-            Err(e) => return Err(e.into()),
+            Err(e) => {
+                error!("IO error while writing request: {}", e);
+                return Err(e.into());
+            }
         };
+        trace!("Awaiting readable stream...");
         self.stream.readable().await?;
+        trace!("Stream readable.");
         let len = match self.stream.read(&mut self.buf).await {
-            Ok(0) => return Err(IpcError::ServerDisconnected),
-            Ok(l) => l,
-            Err(e) => return Err(e.into()),
+            Ok(0) => {
+                error!("Server disconnected while reading response.");
+                return Err(IpcError::ServerDisconnected);
+            }
+            Ok(l) => {
+                trace!("Received response of length {}B", l);
+                l
+            }
+            Err(e) => {
+                error!("IO error while reading response: {}", e);
+                return Err(e.into());
+            }
         };
         let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
-            Err(_) => Err(IpcError::ResponseDeserialization),
+            Err(_) => {
+                error!("Could not deserialize response.");
+                Err(IpcError::ResponseDeserialization)
+            }
         };
         self.buf.clear();
         result
