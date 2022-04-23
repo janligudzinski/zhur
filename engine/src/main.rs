@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     while let Ok((connection, _)) = listener.accept().await {
         tokio::spawn(async move {
             info!("Connection accepted.");
-            let mut server = common::ipc::UnixServer::new(1024 * 8, connection);
+            let mut server = ipc::UnixServer::new(1024 * 8, connection);
             loop {
                 let invocation = match server.get_request::<Invocation>().await {
                     Ok(i) => i,

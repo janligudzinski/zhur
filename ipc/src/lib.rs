@@ -5,7 +5,7 @@ use tokio::{
     net::UnixStream,
 };
 
-use crate::errors::IpcError;
+use common::errors::IpcError;
 
 pub struct UnixServer {
     /// Internal message buffer.
