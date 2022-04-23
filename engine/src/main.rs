@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use common::{
+    errors::IpcError,
     invoke::{Invocation, JsonResponse},
     prelude::*,
 };
@@ -21,6 +22,10 @@ async fn main() -> anyhow::Result<()> {
             loop {
                 let invocation = match server.get_request::<Invocation>().await {
                     Ok(i) => i,
+                    Err(IpcError::ClientDisconnected) => {
+                        info!("Client disconnected.");
+                        break;
+                    }
                     Err(e) => {
                         error!("{}", e);
                         break;
