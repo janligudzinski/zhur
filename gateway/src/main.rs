@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, os::linux::raw, str::FromStr};
+use std::{net::SocketAddr, str::FromStr};
 
 use common::{
     invoke::{Invocation, InvocationContext, InvocationResponse},
@@ -21,7 +21,6 @@ async fn invoke_text(owner: String, app: String, payload: String) -> anyhow::Res
             info!("Got response from engine:\n{}", &payload);
             Ok(payload)
         }
-        _ => panic!("Unsupported response type. Expected text response."),
     }
 }
 
