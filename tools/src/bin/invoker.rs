@@ -1,6 +1,6 @@
 use clap::Parser;
 use common::{
-    invoke::{Invocation, InvocationContext, InvocationType::Json, JsonResponse},
+    invoke::{Invocation, InvocationContext, InvocationResponse},
     prelude::*,
 };
 use ipc::UnixClient;
@@ -23,10 +23,14 @@ async fn main() -> anyhow::Result<()> {
     let mut client = UnixClient::new(1024 * 8, stream);
     let names = vec!["Alice".to_string(), "Bob".to_string(), "Carol".to_string()];
     for name in names {
-        let ctx = InvocationContext::new(flags.owner.clone(), flags.app_name.clone(), Json);
-        let invocation = Invocation::new(ctx, &name);
-        let response = client.request::<_, JsonResponse>(&invocation).await?;
-        info!("Got response from engine:\n{}", response.payload);
+        let ctx = InvocationContext::new(flags.owner.clone(), flags.app_name.clone());
+        let invocation = Invocation::TextInvocation { ctx, payload: name };
+        let response = client.request::<_, InvocationResponse>(&invocation).await?;
+        match response {
+            InvocationResponse::TextResponse { ctx: _, payload } => {
+                info!("Got response from engine:\n{}", payload);
+            }
+        }
     }
     Ok(())
 }

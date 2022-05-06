@@ -2,12 +2,30 @@ use std::collections::HashMap;
 
 use common::{
     errors::IpcError,
-    invoke::{Invocation, JsonResponse},
+    invoke::{
+        Invocation::{self, *},
+        InvocationResponse::{self, *},
+    },
     prelude::*,
 };
 use log::*;
 use tokio::net::UnixListener;
 const ENGINE_SOCKET_PATH: &str = "/tmp/zhur-engine.sck";
+
+fn handle_invocation(invocation: Invocation) -> InvocationResponse {
+    match invocation {
+        TextInvocation { ctx, payload } => {
+            let hello_world = format!(
+                "Hello {}, this is {}'s app named {} invoked at {}.",
+                payload, &ctx.owner, &ctx.app, &ctx.timestamp
+            );
+            TextResponse {
+                ctx,
+                payload: hello_world,
+            }
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -31,21 +49,7 @@ async fn main() -> anyhow::Result<()> {
                         break;
                     }
                 };
-                let hello_string: String =
-                    bincode::deserialize(&invocation.payload).expect("deser");
-                let hello_world = format!(
-                    "Hello, {}, this is {}'s app named {} invoked at {}.",
-                    hello_string,
-                    invocation.ctx.owner,
-                    invocation.ctx.app,
-                    invocation.ctx.timestamp,
-                );
-                let mut skeleton = HashMap::new();
-                skeleton.insert("message", hello_world);
-                let response = JsonResponse {
-                    ctx: invocation.ctx,
-                    payload: serde_json::to_string(&skeleton).expect("error serializing hashmap"),
-                };
+                let response = handle_invocation(invocation);
                 match server.send_response(&response).await {
                     Ok(_) => (),
                     Err(e) => {
