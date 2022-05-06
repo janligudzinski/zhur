@@ -4,8 +4,9 @@ use common::prelude::{log::*, tokio};
 
 use axum::{extract::Path, routing::any, Router};
 
-async fn invoke(Path((owner, app)): Path<(String, String)>) -> String {
-    let res = format!("Invoking {}:{}", owner, app);
+async fn invoke(Path((owner, app, raw_path)): Path<(String, String, Option<String>)>) -> String {
+    let raw_path = raw_path.unwrap_or("/".to_string());
+    let res = format!("Invoking {}:{} with path of {}", owner, app, raw_path);
     info!("{}", &res);
     res
 }
@@ -13,7 +14,7 @@ async fn invoke(Path((owner, app)): Path<(String, String)>) -> String {
 #[tokio::main]
 async fn main() {
     simple_logger::init().unwrap();
-    let app = Router::new().route("/:owner/:app", any(invoke));
+    let app = Router::new().route("/:owner/:app/*raw_path", any(invoke));
     let server = axum::Server::bind(&SocketAddr::from_str("127.0.0.1:8000").unwrap())
         .serve(app.into_make_service());
 
