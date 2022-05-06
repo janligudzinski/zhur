@@ -169,6 +169,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "chrono",
+ "http",
  "log",
  "serde",
  "thiserror",

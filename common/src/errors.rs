@@ -17,3 +17,9 @@ pub enum IpcError {
     #[error("The server disconnected.")]
     ServerDisconnected,
 }
+
+#[derive(Debug, Error)]
+pub enum InvocationError {
+    #[error("The HTTP request being used to create an invocation was malformed.")]
+    BadHttpRequest,
+}

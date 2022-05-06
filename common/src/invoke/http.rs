@@ -2,6 +2,8 @@ use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+mod conversions;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 /// An enum to represent possible HTTP bodies.
 pub enum HttpBody {
