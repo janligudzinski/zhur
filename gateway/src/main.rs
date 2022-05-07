@@ -44,7 +44,7 @@ async fn text_invoke_handler(
 #[tokio::main]
 async fn main() {
     simple_logger::init().unwrap();
-    let app = Router::new().route("/:owner/:app/*raw_path", any(text_invoke_handler));
+    let app = Router::new().route("text/:owner/:app/*raw_path", any(text_invoke_handler));
     let server = axum::Server::bind(&SocketAddr::from_str("127.0.0.1:8000").unwrap())
         .serve(app.into_make_service());
 
