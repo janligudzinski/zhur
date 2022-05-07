@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 mod conversions;
+pub use conversions::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 /// An enum to represent possible HTTP bodies.
