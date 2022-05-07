@@ -28,4 +28,6 @@ pub enum InvocationError {
         "No application named {0}:{1} was found. It may not exist or be temporarily disabled."
     )]
     NoAppFound(String, String),
+    #[error("The invocation and response types did not match - the application returned an HTTP response to a plaintext invocation or vice versa.")]
+    InvokeTypeMismatch,
 }

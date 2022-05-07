@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use self::http::{HttpReq, HttpRes};
 pub mod http;
 
 /// App invocation types. This decides how an app's response is processed.
@@ -9,6 +11,11 @@ pub enum Invocation {
     TextInvocation {
         ctx: InvocationContext,
         payload: String,
+    },
+    /// This is our main invocation type, containing an HTTP request.
+    HttpInvocation {
+        ctx: InvocationContext,
+        payload: HttpReq,
     },
 }
 
@@ -38,5 +45,9 @@ pub enum InvocationResponse {
     TextResponse {
         ctx: InvocationContext,
         payload: String,
+    },
+    HttpResponse {
+        ctx: InvocationContext,
+        payload: HttpRes,
     },
 }

@@ -1,6 +1,7 @@
 use std::{net::SocketAddr, str::FromStr};
 
 use common::{
+    errors::InvocationError,
     invoke::{Invocation, InvocationContext, InvocationResponse},
     prelude::{log::*, tokio},
 };
@@ -20,6 +21,10 @@ async fn invoke_text(owner: String, app: String, payload: String) -> anyhow::Res
         InvocationResponse::TextResponse { ctx: _, payload } => {
             info!("Got response from engine:\n{}", &payload);
             Ok(payload)
+        }
+        InvocationResponse::HttpResponse { ctx: _, payload: _ } => {
+            error!("Got an HTTP invocation response for a text invocation!");
+            Err(InvocationError::InvokeTypeMismatch.into())
         }
     }
 }
