@@ -9,5 +9,6 @@ edition = "2021"
 anyhow = "1.0"
 axum = "0.5"
 common = { path = "../common" }
+mime = "0.3"
 ipc = { path = "../ipc" }
 simple_logger = "2.1"

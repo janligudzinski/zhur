@@ -250,6 +250,7 @@ dependencies = [
  "axum",
  "common",
  "ipc",
+ "mime",
  "simple_logger",
 ]
 

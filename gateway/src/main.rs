@@ -2,12 +2,38 @@ use std::{net::SocketAddr, str::FromStr};
 
 use common::{
     errors::InvocationError,
-    invoke::{Invocation, InvocationContext, InvocationResponse},
+    invoke::{
+        http::{HttpReq, HttpRes},
+        Invocation, InvocationContext, InvocationResponse,
+    },
     prelude::{log::*, tokio},
 };
 
-use axum::{extract::Path, routing::any, Router};
+use axum::{body::Body, body::HttpBody, extract::Path, http::Request, routing::any, Router};
 use ipc::UnixClient;
+
+async fn invoke_http(owner: String, app: String, payload: HttpReq) -> anyhow::Result<HttpRes> {
+    let stream = tokio::net::UnixStream::connect("/tmp/zhur-engine.sck").await?;
+    let mut client = UnixClient::new(1024 * 8, stream);
+    let invocation = Invocation::HttpInvocation {
+        ctx: InvocationContext::new(owner, app),
+        payload,
+    };
+    let response = client.request::<_, InvocationResponse>(&invocation).await?;
+    match response {
+        InvocationResponse::HttpResponse { ctx, payload } => {
+            info!(
+                "Got HTTP response from engine for {}:{}.",
+                ctx.owner, ctx.app
+            );
+            Ok(payload)
+        }
+        InvocationResponse::TextResponse { ctx: _, payload: _ } => {
+            error!("Got a text invocation response for an HTTP invocation!");
+            Err(InvocationError::InvokeTypeMismatch.into())
+        }
+    }
+}
 
 async fn invoke_text(owner: String, app: String, payload: String) -> anyhow::Result<String> {
     let stream = tokio::net::UnixStream::connect("/tmp/zhur-engine.sck").await?;
@@ -38,6 +64,56 @@ async fn text_invoke_handler(
     match invoke_text(owner, app, raw_path).await {
         Ok(x) => x,
         Err(e) => format!("Error: {e}"),
+    }
+}
+
+async fn http_invoke_handler(
+    Path((owner, app, raw_path)): Path<(String, String, Option<String>)>,
+    mut req: Request<Body>,
+) {
+    let raw_path = raw_path.unwrap_or("/".to_string());
+    let is_plaintext = match req.headers().get(&axum::http::header::CONTENT_TYPE) {
+        Some(c) => !is_mimetype_binary(c.to_str().unwrap_or("application/octet-stream")),
+        None => false,
+    };
+    let req_body = match req.body_mut().data().await {
+        None => common::invoke::http::HttpBody::default(),
+        Some(res) => match res {
+            Ok(b) => {
+                let bytes = b.to_vec();
+                if is_plaintext {
+                    let text = String::from_utf8(bytes).expect("should be plaintext");
+                    common::invoke::http::HttpBody::Text(text)
+                } else {
+                    common::invoke::http::HttpBody::Binary(bytes)
+                }
+            }
+            Err(e) => {
+                todo!()
+            }
+        },
+    };
+}
+
+fn is_mimetype_binary(mimetype: &str) -> bool {
+    use mime::Mime;
+    match mimetype.parse::<Mime>() {
+        Ok(m) => match m.type_() {
+            mime::TEXT => false,
+            mime::APPLICATION => match m.subtype() {
+                mime::JAVASCRIPT | mime::JSON => false,
+                _ => true,
+            },
+            _ => true,
+        },
+        Err(e) => {
+            warn!(
+                "Error occurred when parsing the MIME type of a request: {}",
+                e
+            );
+            warn!("Assuming binary format.");
+            true
+        }
     }
 }
 
