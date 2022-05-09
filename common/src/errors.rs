@@ -36,4 +36,8 @@ pub enum InvocationError {
     InvalidTextOutput,
     #[error("Internal WASM code execution error: {0}")]
     ExecutionError(String),
+    #[error("A WASM host could not be spawned. Details: {0}")]
+    HostInitializationError(String),
+    #[error("The WASM code provided could not be loaded. Details: {0}")]
+    BadCode(String),
 }

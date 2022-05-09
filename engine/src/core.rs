@@ -1,5 +1,5 @@
 use common::{errors::InvocationError, prelude::*};
-use wapc::WapcHost;
+use wapc::{HostCallback, WapcHost, WebAssemblyEngineProvider};
 /// A Zhur core is a struct that handles executing incoming invocations through a waPC runtime.
 pub struct Core {
     /// The waPC-compliant runtime.
@@ -17,5 +17,17 @@ impl Core {
         let output = bincode::deserialize::<String>(&result)
             .map_err(|_| InvocationError::InvalidTextOutput)?;
         Ok(output)
+    }
+    pub fn new(
+        engine: Box<dyn WebAssemblyEngineProvider>,
+        wasm_code: &[u8],
+    ) -> Result<Self, InvocationError> {
+        let host_callback =
+            |_id: u64, _bd: &str, _ns: &str, op: &str, payload: &[u8]| Ok(Vec::<u8>::new());
+        let host = WapcHost::new(engine, Some(Box::new(host_callback)))
+            .map_err(|e| InvocationError::HostInitializationError(e.to_string()))?;
+        host.replace_module(wasm_code)
+            .map_err(|e| InvocationError::BadCode(e.to_string()))?;
+        Ok(Self { runtime: host })
     }
 }
