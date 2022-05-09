@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,7 +19,7 @@ pub enum IpcError {
     ServerDisconnected,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Deserialize, Serialize)]
 pub enum InvocationError {
     #[error("The HTTP request being used to create an invocation was malformed.")]
     BadHttpRequest,
