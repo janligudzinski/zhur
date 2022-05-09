@@ -2,7 +2,7 @@ use wapc_guest as wapc;
 
 #[no_mangle]
 pub fn wapc_init() {
-    wapc::register_function("hello", hello)
+    wapc::register_function("text", hello)
 }
 
 fn hello(msg: &[u8]) -> wapc::CallResult {
