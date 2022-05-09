@@ -2,3 +2,6 @@
 pub mod core;
 /// Invocation-handling logic.
 pub mod invoke;
+
+/// Code retrieval logic.
+pub mod code;

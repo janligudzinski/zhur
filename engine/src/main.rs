@@ -15,10 +15,6 @@ const ENGINE_SOCKET_PATH: &str = "/tmp/zhur-engine.sck";
 async fn main() -> anyhow::Result<()> {
     simple_logger::init()?;
     info!("Zhur engine started.");
-    info!(
-        "working dir is {}",
-        std::env::current_dir().unwrap().to_str().unwrap()
-    );
     std::fs::remove_file(ENGINE_SOCKET_PATH).ok();
     let listener = UnixListener::bind(ENGINE_SOCKET_PATH)?;
     while let Ok((connection, _)) = listener.accept().await {
