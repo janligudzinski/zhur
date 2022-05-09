@@ -28,7 +28,10 @@ async fn main() -> anyhow::Result<()> {
         let response = client.request::<_, InvocationResponse>(&invocation).await?;
         match response {
             InvocationResponse::TextResponse { ctx: _, payload } => {
-                info!("Got response from engine:\n{}", payload);
+                info!("Got text response from engine:\n{}", payload);
+            }
+            InvocationResponse::HttpResponse { ctx: _, payload } => {
+                info!("Got HTTP response from engine.");
             }
         }
     }

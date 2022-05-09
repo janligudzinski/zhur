@@ -22,6 +22,7 @@ fn handle_invocation(invocation: Invocation) -> InvocationResponse {
                 payload: hello_world,
             }
         }
+        _ => panic!("HTTP invocations not supported yet!"),
     }
 }
 
