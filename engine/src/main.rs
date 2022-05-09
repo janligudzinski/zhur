@@ -5,6 +5,7 @@ use common::{
     invoke::{
         Invocation::{self, *},
         InvocationResponse::{self, *},
+        InvocationResult,
     },
     prelude::{tokio::sync::mpsc::UnboundedSender, *},
 };
@@ -33,36 +34,41 @@ async fn main() -> anyhow::Result<()> {
         Some(c) => c,
         None => return Err(InvocationError::NoAppFound(flags.owner, flags.name).into()),
     };
-    // Create core.
-    let provider = wasm3_provider::Wasm3EngineProvider::new(&code);
-    let core = engine::core::Core::new(Box::new(provider))?;
     use tokio::sync::mpsc;
 
-    let (inv_tx, inv_rx) =
+    let (inv_tx, mut inv_rx) =
         mpsc::unbounded_channel::<(Invocation, UnboundedSender<InvocationResult>)>();
-    std::thread::spawn(move || loop {
-        let (invocation, res_tx) = match inv_rx.blocking_recv() {
-            Some(r) => r,
-            None => {
-                warn!("Could not recv() an invocation on the core thread, exiting loop.");
-                break;
-            }
-        };
-        let response = handle_invocation(invocation, &mut core);
-        res_tx
-            .send(response)
-            .expect("Could not send a response from the core thread.");
+    std::thread::spawn(move || {
+        info!("Core thread starting.");
+        // Create core.
+        let provider = wasm3_provider::Wasm3EngineProvider::new(&code);
+        let mut core = engine::core::Core::new(Box::new(provider)).unwrap();
+        loop {
+            let (invocation, res_tx) = match inv_rx.blocking_recv() {
+                Some(r) => r,
+                None => {
+                    warn!("Could not recv() an invocation on the core thread, exiting loop.");
+                    break;
+                }
+            };
+            let response = handle_invocation(invocation, &mut core);
+            res_tx
+                .send(response)
+                .expect("Could not send a response from the core thread.");
+        }
+        info!("Core thread has ended operation.");
     });
     // Start server.
     std::fs::remove_file(ENGINE_SOCKET_PATH).ok();
     let listener = UnixListener::bind(ENGINE_SOCKET_PATH)?;
     while let Ok((connection, _)) = listener.accept().await {
+        let inv_tx = inv_tx.clone();
         tokio::spawn(async move {
             info!("Connection accepted.");
             let mut server = ipc::UnixServer::new(1024 * 8, connection);
-            let inv_tx = inv_tx.clone();
-            let (inv_res_tx, inv_res_rx) = mpsc::unbounded_channel::<InvocationResult>();
             loop {
+                let inv_tx = inv_tx.clone();
+                let (inv_res_tx, mut inv_res_rx) = mpsc::unbounded_channel::<InvocationResult>();
                 let invocation = match server.get_request::<Invocation>().await {
                     Ok(i) => i,
                     Err(IpcError::ClientDisconnected) => {

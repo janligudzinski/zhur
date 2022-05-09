@@ -4,7 +4,7 @@ use common::{
     errors::InvocationError,
     invoke::{
         http::{HttpReq, HttpRes},
-        Invocation, InvocationContext, InvocationResponse,
+        Invocation, InvocationContext, InvocationResponse, InvocationResult,
     },
     prelude::{log::*, tokio},
 };
@@ -42,7 +42,7 @@ async fn invoke_text(owner: String, app: String, payload: String) -> anyhow::Res
         ctx: InvocationContext::new(owner, app),
         payload,
     };
-    let response = client.request::<_, InvocationResponse>(&invocation).await?;
+    let response = client.request::<_, InvocationResult>(&invocation).await??;
     match response {
         InvocationResponse::TextResponse { ctx: _, payload } => {
             info!("Got response from engine:\n{}", &payload);

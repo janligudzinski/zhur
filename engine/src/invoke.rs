@@ -5,8 +5,6 @@ use common::{
 
 use crate::core::Core;
 
-pub type InvocationResult = Result<InvocationResponse, InvocationError>;
-
 /// Handles a plaintext invocation.
 fn handle_text_invocation(
     ctx: InvocationContext,
