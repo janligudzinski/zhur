@@ -30,4 +30,10 @@ pub enum InvocationError {
     NoAppFound(String, String),
     #[error("The invocation and response types did not match - the application returned an HTTP response to a plaintext invocation or vice versa.")]
     InvokeTypeMismatch,
+    #[error("The payload for a text function was not valid serializable UTF-8 text.")]
+    InvalidTextPayload,
+    #[error("The return value of a text function could not be deserialized as valid UTF-8 text.")]
+    InvalidTextOutput,
+    #[error("Internal WASM code execution error: {0}")]
+    ExecutionError(String),
 }
