@@ -8,23 +8,10 @@ use common::{
 };
 use log::*;
 use tokio::net::UnixListener;
+/// Invocation-handling logic.
+mod invoke;
+use invoke::*;
 const ENGINE_SOCKET_PATH: &str = "/tmp/zhur-engine.sck";
-
-fn handle_invocation(invocation: Invocation) -> InvocationResponse {
-    match invocation {
-        TextInvocation { ctx, payload } => {
-            let hello_world = format!(
-                "Hello {}, this is {}'s app named {} invoked at {}.",
-                payload, &ctx.owner, &ctx.app, &ctx.timestamp
-            );
-            TextResponse {
-                ctx,
-                payload: hello_world,
-            }
-        }
-        _ => panic!("HTTP invocations not supported yet!"),
-    }
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
