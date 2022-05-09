@@ -8,9 +8,8 @@ use common::{
 };
 use log::*;
 use tokio::net::UnixListener;
-/// Invocation-handling logic.
-mod invoke;
-use invoke::*;
+
+use engine::invoke::*;
 const ENGINE_SOCKET_PATH: &str = "/tmp/zhur-engine.sck";
 
 #[tokio::main]
