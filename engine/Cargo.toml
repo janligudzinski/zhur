@@ -11,3 +11,4 @@ common = { path = "../common" }
 ipc = { path = "../ipc" }
 serde_json = "1.0"
 simple_logger = "2.1"
+wapc = "1.0"
