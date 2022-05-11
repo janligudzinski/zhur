@@ -8,7 +8,7 @@ pub fn wapc_init() {
 fn hello(msg: &[u8]) -> wapc::CallResult {
     let name = bincode::deserialize::<String>(msg)
         .expect("a text function expects a deserializable utf-8 string");
-    if name == "Panic" {
+    if name.contains("panic") {
         panic!("The special panic name was invoked.");
     }
     let hello_text = format!("Hello, {}, this is a WASM app speaking!", name);
