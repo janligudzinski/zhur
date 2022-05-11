@@ -2,6 +2,9 @@ use wapc_guest as wapc;
 
 #[no_mangle]
 pub fn wapc_init() {
+    std::panic::set_hook(Box::new(|p| {
+        wapc::host_call("zhur", "internals", "panic", p.to_string().as_bytes()).unwrap();
+    }));
     wapc::register_function("text", hello)
 }
 
