@@ -9,4 +9,4 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-sdk = { path = "../../sdk" }
+zhur_sdk = { path = "../../sdk" }

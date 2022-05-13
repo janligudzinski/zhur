@@ -8,4 +8,4 @@ fn hello(name: String) -> String {
     );
     hello_text
 }
-sdk::text_function!(hello);
+zhur_sdk::text_function!(hello);
