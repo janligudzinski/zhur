@@ -1,2 +1,3 @@
 [workspace]
 members = ["common", "gateway", "ipc", "engine", "tools"]
+exclude = ["wasm-examples"]

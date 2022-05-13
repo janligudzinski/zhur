@@ -1,8 +1,13 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::errors::InvocationError;
+
 use self::http::{HttpReq, HttpRes};
 pub mod http;
+
+/// Common shorthand for `Result<InvocationResponse, InvocationError>`. This is the type returned by the Zhur engine.
+pub type InvocationResult = Result<InvocationResponse, InvocationError>;
 
 /// App invocation types. This decides how an app's response is processed.
 #[derive(Deserialize, Serialize, Debug)]

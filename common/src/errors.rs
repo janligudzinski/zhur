@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,7 +19,7 @@ pub enum IpcError {
     ServerDisconnected,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Deserialize, Serialize)]
 pub enum InvocationError {
     #[error("The HTTP request being used to create an invocation was malformed.")]
     BadHttpRequest,
@@ -30,4 +31,14 @@ pub enum InvocationError {
     NoAppFound(String, String),
     #[error("The invocation and response types did not match - the application returned an HTTP response to a plaintext invocation or vice versa.")]
     InvokeTypeMismatch,
+    #[error("The payload for a text function was not valid serializable UTF-8 text.")]
+    InvalidTextPayload,
+    #[error("The return value of a text function could not be deserialized as valid UTF-8 text.")]
+    InvalidTextOutput,
+    #[error("Internal WASM code execution error: {0}")]
+    ExecutionError(String),
+    #[error("A WASM host could not be spawned. Details: {0}")]
+    HostInitializationError(String),
+    #[error("The WASM code provided could not be loaded. Details: {0}")]
+    BadCode(String),
 }
