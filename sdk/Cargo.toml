@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 bincode = "1.0"
 wapc-guest = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"

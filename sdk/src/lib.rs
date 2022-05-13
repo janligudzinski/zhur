@@ -3,6 +3,10 @@ pub mod __internals {
     pub use bincode;
     pub use wapc_guest;
 }
+/// Key-value database methods.
+pub mod db;
+/// Error types.
+pub mod error;
 /// This macro sets up all the Zhur SDK boilerplate for a text function that takes a UTF-8 `String` and returns another.
 #[macro_export]
 macro_rules! text_function {
