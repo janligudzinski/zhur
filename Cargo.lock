@@ -847,6 +847,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
+name = "sdk"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "wapc-guest",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1214,6 +1222,16 @@ dependencies = [
  "log",
  "parking_lot 0.11.2",
  "thiserror",
+]
+
+[[package]]
+name = "wapc-guest"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51d55cfd1e7647db9da8b283424bb2b24aa9c470dbe18991d0126f83aa085851"
+dependencies = [
+ "once_cell",
+ "parking_lot 0.11.2",
 ]
 
 [[package]]
