@@ -2,19 +2,6 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::error::DbError;
 
-/// Create a new table.
-pub fn create_table(table: &str) -> Result<(), DbError> {
-    unimplemented!()
-}
-/// Check if a table exists.
-pub fn table_exists(table: &str) -> Result<bool, DbError> {
-    unimplemented!()
-}
-/// Delete a table.
-pub fn delete_table(table: &str) -> Result<(), DbError> {
-    unimplemented!()
-}
-
 /// Get a single value from a given table by its key.
 pub fn get<T: DeserializeOwned>(table: &str, key: &str) -> Result<Option<T>, DbError> {
     unimplemented!()
