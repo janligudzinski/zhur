@@ -2,9 +2,17 @@ use std::sync::{Arc, Mutex};
 
 use common::{
     errors::InvocationError,
-    prelude::{log::warn, *},
+    invoke::{Invocation, InvocationResult},
+    prelude::{
+        log::{info, warn},
+        tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender},
+        *,
+    },
 };
 use wapc::{WapcHost, WebAssemblyEngineProvider};
+use wasm3_provider::Wasm3EngineProvider;
+
+use crate::invoke::handle_invocation;
 /// A Zhur core is a struct that handles executing incoming invocations through a waPC runtime.
 pub struct Core {
     /// The waPC-compliant runtime.
@@ -63,5 +71,30 @@ impl Core {
             .lock()
             .expect("Could not lock panic string holder for reading.")
             .clone()
+    }
+    /// Starts a thread on which a core is created and responds to incoming invocations.
+    pub fn start_core_thread(
+        code: Vec<u8>,
+        mut inv_rx: UnboundedReceiver<(Invocation, UnboundedSender<InvocationResult>)>,
+    ) {
+        std::thread::spawn(move || {
+            info!("Core thread starting.");
+            let provider = Wasm3EngineProvider::new(&code);
+            let mut core = Self::new(Box::new(provider)).unwrap();
+            loop {
+                let (invocation, res_tx) = match inv_rx.blocking_recv() {
+                    Some(r) => r,
+                    None => {
+                        warn!("Could not recv() an invocation on the core thread, exiting loop.");
+                        break;
+                    }
+                };
+                let response = handle_invocation(invocation, &mut core);
+                res_tx
+                    .send(response)
+                    .expect("Could not send a response from the core thread.");
+            }
+            info!("Core thread has ended operation.");
+        });
     }
 }

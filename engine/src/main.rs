@@ -1,15 +1,9 @@
-use std::sync::{Arc, RwLock};
-
 use common::{
     errors::{InvocationError, IpcError},
-    invoke::{
-        Invocation::{self, *},
-        InvocationResponse::{self, *},
-        InvocationResult,
-    },
+    invoke::{Invocation, InvocationResult},
     prelude::{tokio::sync::mpsc::UnboundedSender, *},
 };
-use engine::invoke::*;
+use engine::core::Core;
 use log::*;
 use tokio::net::UnixListener;
 const ENGINE_SOCKET_PATH: &str = "/tmp/zhur-engine.sck";
@@ -36,28 +30,10 @@ async fn main() -> anyhow::Result<()> {
     };
     use tokio::sync::mpsc;
 
-    let (inv_tx, mut inv_rx) =
+    let (inv_tx, inv_rx) =
         mpsc::unbounded_channel::<(Invocation, UnboundedSender<InvocationResult>)>();
-    std::thread::spawn(move || {
-        info!("Core thread starting.");
-        // Create core.
-        let provider = wasm3_provider::Wasm3EngineProvider::new(&code);
-        let mut core = engine::core::Core::new(Box::new(provider)).unwrap();
-        loop {
-            let (invocation, res_tx) = match inv_rx.blocking_recv() {
-                Some(r) => r,
-                None => {
-                    warn!("Could not recv() an invocation on the core thread, exiting loop.");
-                    break;
-                }
-            };
-            let response = handle_invocation(invocation, &mut core);
-            res_tx
-                .send(response)
-                .expect("Could not send a response from the core thread.");
-        }
-        info!("Core thread has ended operation.");
-    });
+    // Start core thread.
+    Core::start_core_thread(code, inv_rx);
     // Start server.
     std::fs::remove_file(ENGINE_SOCKET_PATH).ok();
     let listener = UnixListener::bind(ENGINE_SOCKET_PATH)?;
