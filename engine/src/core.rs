@@ -56,6 +56,24 @@ impl Core {
                     Some(panic_string.to_owned());
                 Ok(Vec::<u8>::new())
             }
+            "db_get" => {
+                todo!()
+            }
+            "db_set" => {
+                todo!()
+            }
+            "db_del" => {
+                todo!()
+            }
+            "db_get_prefixed" => {
+                todo!()
+            }
+            "db_set_many" => {
+                todo!()
+            }
+            "db_del_prefixed" => {
+                todo!()
+            }
             _ => unimplemented!("Errors for invalid host calls not implemented yet"),
         };
         let host = WapcHost::new(engine, Some(Box::new(host_callback)))
