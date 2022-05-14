@@ -41,3 +41,14 @@ pub enum DbRequest {
         pairs: Vec<(String, Vec<u8>)>,
     },
 }
+/// Type used for database responses.
+#[derive(Deserialize, Serialize, Debug)]
+pub enum DbResponse {
+    Value(Vec<u8>),
+    SetOk,
+    DeletedOk,
+    ManyValues(Vec<Vec<u8>>),
+    DeletedManyOk(usize),
+    SetManyOk,
+    InternalError(String),
+}
