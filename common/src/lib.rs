@@ -1,3 +1,5 @@
+/// Database types.
+pub mod db;
 /// Error types.
 pub mod errors;
 /// App invocation-related types.
