@@ -42,38 +42,32 @@ impl Core {
     pub fn new(engine: Box<dyn WebAssemblyEngineProvider>) -> Result<Self, InvocationError> {
         let panic_holder = Arc::new(Mutex::new(None));
         let callback_holder = panic_holder.clone();
-        let host_callback = move |_id: u64, _bd: &str, _ns: &str, op: &str, pld: &[u8]| match op {
-            "panic" => {
-                let panic_string = std::str::from_utf8(pld)
-                    .expect("Panic string in a guest app was not a valid UTF-8 string");
-                warn!(
-                    "A guest application has panicked with the panic info: {}",
-                    panic_string
-                );
-                *callback_holder
-                    .lock()
-                    .expect("Could not lock panic string holder for writing.") =
-                    Some(panic_string.to_owned());
-                Ok(Vec::<u8>::new())
-            }
-            "db_get" => {
-                todo!()
-            }
-            "db_set" => {
-                todo!()
-            }
-            "db_del" => {
-                todo!()
-            }
-            "db_get_prefixed" => {
-                todo!()
-            }
-            "db_set_many" => {
-                todo!()
-            }
-            "db_del_prefixed" => {
-                todo!()
-            }
+        let host_callback = move |_id: u64, _bd: &str, ns: &str, op: &str, pld: &[u8]| match ns {
+            "internals" => match op {
+                "panic" => {
+                    let panic_string = std::str::from_utf8(pld)
+                        .expect("Panic string in a guest app was not a valid UTF-8 string");
+                    warn!(
+                        "A guest application has panicked with the panic info: {}",
+                        panic_string
+                    );
+                    *callback_holder
+                        .lock()
+                        .expect("Could not lock panic string holder for writing.") =
+                        Some(panic_string.to_owned());
+                    Ok(Vec::<u8>::new())
+                }
+                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+            },
+            "db" => match op {
+                "get" => todo!(),
+                "set" => todo!(),
+                "del" => todo!(),
+                "get_prefix" => todo!(),
+                "set_many" => todo!(),
+                "del_prefix" => todo!(),
+                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+            },
             _ => unimplemented!("Errors for invalid host calls not implemented yet"),
         };
         let host = WapcHost::new(engine, Some(Box::new(host_callback)))
