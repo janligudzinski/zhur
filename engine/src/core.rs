@@ -4,6 +4,7 @@ use common::{
     errors::InvocationError,
     invoke::{Invocation, InvocationResult},
     prelude::{
+        chrono,
         log::{info, warn},
         tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender},
         *,
@@ -56,6 +57,13 @@ impl Core {
                         .expect("Could not lock panic string holder for writing.") =
                         Some(panic_string.to_owned());
                     Ok(Vec::<u8>::new())
+                }
+                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+            },
+            "datetime" => match op {
+                "now" => {
+                    let naive_dt = chrono::Utc::now().naive_utc();
+                    Ok(bincode::serialize(&naive_dt).unwrap())
                 }
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             },

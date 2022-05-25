@@ -6,5 +6,5 @@ pub mod errors;
 pub mod invoke;
 // Reexports for other crates.
 pub mod prelude {
-    pub use {bincode, log, serde, tokio};
+    pub use {bincode, chrono, log, serde, tokio};
 }
