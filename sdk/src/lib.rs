@@ -3,6 +3,8 @@ pub mod __internals {
     pub use bincode;
     pub use wapc_guest;
 }
+/// Date and time handling methods.
+pub mod datetime;
 /// Key-value database methods.
 pub mod db;
 /// Error types.
