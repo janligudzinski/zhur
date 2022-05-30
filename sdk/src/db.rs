@@ -49,6 +49,14 @@ pub fn del_prefixed(table: &str, key_prefix: &str) -> Result<u64, DbError> {
     }
 }
 /// Set multiple key-value pairs.
-pub fn set_many<T: Serialize>(table: &str, pairs: &(&str, &T)) -> Result<(), DbError> {
-    unimplemented!()
+pub fn set_many<T: Serialize>(table: &str, pairs: &[(&str, &T)]) -> Result<(), DbError> {
+    let mut pairs_vec = vec![];
+    for pair in pairs {
+        pairs_vec.push((pair.0, serialize(pair.1).unwrap()));
+    }
+    let request = serialize(&(table, &pairs_vec)).unwrap();
+    match host_call("", "db", "set_many", &request) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(DbError::Internal(e.to_string())),
+    }
 }

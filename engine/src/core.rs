@@ -126,7 +126,15 @@ impl Core {
                     }
                     Ok(serialize(&del_counter).unwrap())
                 }
-                "set_many" => todo!(),
+                "set_many" => {
+                    let (table, pairs) = deserialize::<(&str, Vec<(&str, Vec<u8>)>)>(pld).unwrap();
+                    let mut db = db.lock().unwrap();
+                    for pair in pairs {
+                        let full_key = format!("{}:{}", table, pair.0);
+                        db.insert(full_key, pair.1);
+                    }
+                    Ok(vec![])
+                }
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             },
             _ => unimplemented!("Errors for invalid host calls not implemented yet"),
