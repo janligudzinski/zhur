@@ -109,8 +109,24 @@ impl Core {
                     let answer = serialize(&values_found).unwrap();
                     Ok(answer)
                 }
+                "del_prefixed" => {
+                    let (table, key_prefix) = deserialize::<(&str, &str)>(pld).unwrap();
+                    let full_key_prefix = format!("{}:{}", table, key_prefix);
+                    let mut del_counter = 0u64;
+                    let mut db = db.lock().unwrap();
+                    let keys = {
+                        db.keys()
+                            .filter(|key| key.starts_with(&full_key_prefix))
+                            .map(|key| key.to_owned())
+                            .collect::<Vec<_>>()
+                    };
+                    for key in keys {
+                        del_counter += 1;
+                        db.remove(&key);
+                    }
+                    Ok(serialize(&del_counter).unwrap())
+                }
                 "set_many" => todo!(),
-                "del_prefix" => todo!(),
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             },
             _ => unimplemented!("Errors for invalid host calls not implemented yet"),

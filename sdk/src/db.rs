@@ -41,8 +41,12 @@ pub fn get_prefixed<T: DeserializeOwned>(table: &str, key_prefix: &str) -> Resul
     }
 }
 /// Delete all values in a table whose keys start with the given prefix. Returns how many keys were deleted.
-pub fn del_prefixed(table: &str, key_prefix: &str) -> Result<usize, DbError> {
-    unimplemented!()
+pub fn del_prefixed(table: &str, key_prefix: &str) -> Result<u64, DbError> {
+    let request = serialize(&(table, key_prefix)).unwrap();
+    match host_call("", "db", "del_prefixed", &request) {
+        Ok(bytes) => deserialize::<u64>(&bytes).map_err(|_| DbError::DeserializationError),
+        Err(e) => Err(DbError::Internal(e.to_string())),
+    }
 }
 /// Set multiple key-value pairs.
 pub fn set_many<T: Serialize>(table: &str, pairs: &(&str, &T)) -> Result<(), DbError> {
