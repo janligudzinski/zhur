@@ -1,9 +1,13 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
 use common::{
     errors::InvocationError,
     invoke::{Invocation, InvocationResult},
     prelude::{
+        bincode::{deserialize, serialize},
         chrono,
         log::{info, warn},
         tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender},
@@ -21,6 +25,8 @@ pub struct Core {
     /// A wrapper for panic info text returned by guest apps.
     // This has to be wrapped in an Arc and a Mutex because we want to be able to modify this data from closures.
     panic_holder: Arc<Mutex<Option<String>>>,
+    /// This is where we will hold the placeholder struct for database logic testing.
+    db_holder: Arc<Mutex<BTreeMap<String, Vec<u8>>>>,
 }
 
 impl Core {
@@ -43,6 +49,8 @@ impl Core {
     pub fn new(engine: Box<dyn WebAssemblyEngineProvider>) -> Result<Self, InvocationError> {
         let panic_holder = Arc::new(Mutex::new(None));
         let callback_holder = panic_holder.clone();
+        let db_holder = Arc::new(Mutex::new(BTreeMap::new()));
+        let db = db_holder.clone();
         let host_callback = move |_id: u64, _bd: &str, ns: &str, op: &str, pld: &[u8]| match ns {
             "internals" => match op {
                 "panic" => {
@@ -68,7 +76,12 @@ impl Core {
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             },
             "db" => match op {
-                "get" => todo!(),
+                "get" => {
+                    let (table, key) = deserialize::<(&str, &str)>(pld).unwrap();
+                    let full_key = format!("{}:{}", table, key);
+                    let answer = serialize(&db.lock().unwrap().get(&full_key)).unwrap();
+                    Ok(answer)
+                }
                 "set" => todo!(),
                 "del" => todo!(),
                 "get_prefix" => todo!(),
@@ -83,6 +96,7 @@ impl Core {
         Ok(Self {
             runtime: host,
             panic_holder,
+            db_holder,
         })
     }
     /// Retrieves panic info after an invocation, if there was any.
