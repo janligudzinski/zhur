@@ -94,7 +94,21 @@ impl Core {
                     db.lock().unwrap().remove(&full_key);
                     Ok(vec![])
                 }
-                "get_prefix" => todo!(),
+                "get_prefixed" => {
+                    let (table, key_prefix) = deserialize::<(&str, &str)>(pld).unwrap();
+                    let full_key_prefix = format!("{}:{}", table, key_prefix);
+                    let mut values_found = vec![];
+                    for (_key, value) in db
+                        .lock()
+                        .unwrap()
+                        .iter()
+                        .filter(|(key, _)| key.starts_with(&full_key_prefix))
+                    {
+                        values_found.push(value.clone());
+                    }
+                    let answer = serialize(&values_found).unwrap();
+                    Ok(answer)
+                }
                 "set_many" => todo!(),
                 "del_prefix" => todo!(),
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
