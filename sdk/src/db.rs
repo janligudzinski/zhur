@@ -26,7 +26,11 @@ pub fn set<T: Serialize>(table: &str, key: &str, value: &T) -> Result<(), DbErro
 }
 /// Delete a single value.
 pub fn del(table: &str, key: &str) -> Result<(), DbError> {
-    unimplemented!()
+    let request = serialize(&(table, key)).unwrap();
+    match host_call("", "db", "del", &request) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(DbError::Internal(e.to_string())),
+    }
 }
 /// Retrieve all values in a table whose keys start with the given prefix.
 pub fn get_prefixed<T: DeserializeOwned>(table: &str, key_prefix: &str) -> Result<Vec<T>, DbError> {

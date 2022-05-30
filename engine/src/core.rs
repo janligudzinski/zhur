@@ -88,7 +88,12 @@ impl Core {
                     db.lock().unwrap().insert(full_key, value);
                     Ok(vec![])
                 }
-                "del" => todo!(),
+                "del" => {
+                    let (table, key) = deserialize::<(&str, &str)>(pld).unwrap();
+                    let full_key = format!("{}:{}", table, key);
+                    db.lock().unwrap().remove(&full_key);
+                    Ok(vec![])
+                }
                 "get_prefix" => todo!(),
                 "set_many" => todo!(),
                 "del_prefix" => todo!(),
