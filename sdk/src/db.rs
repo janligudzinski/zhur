@@ -1,12 +1,13 @@
 use bincode::{deserialize, serialize};
 use serde::{de::DeserializeOwned, Serialize};
+use wapc::host_call;
 
 use crate::__internals::wapc_guest as wapc;
 use crate::error::DbError;
 /// Get a single value from a given table by its key.
 pub fn get<T: DeserializeOwned>(table: &str, key: &str) -> Result<Option<T>, DbError> {
     let request = serialize(&(table, key)).unwrap();
-    let response = wapc::host_call("", "db", "get", &request).unwrap();
+    let response = host_call("", "db", "get", &request).unwrap();
     let response =
         deserialize::<Option<Vec<u8>>>(&response).map_err(|_| DbError::DeserializationError)?;
     match response {
@@ -16,7 +17,12 @@ pub fn get<T: DeserializeOwned>(table: &str, key: &str) -> Result<Option<T>, DbE
 }
 /// Set a single value at the given table and key.
 pub fn set<T: Serialize>(table: &str, key: &str, value: &T) -> Result<(), DbError> {
-    unimplemented!()
+    let bytes = serialize(value).unwrap();
+    let request = serialize(&(table, key, bytes)).unwrap();
+    match host_call("", "db", "set", &request) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(DbError::Internal(e.to_string())),
+    }
 }
 /// Delete a single value.
 pub fn del(table: &str, key: &str) -> Result<(), DbError> {

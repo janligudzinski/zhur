@@ -82,7 +82,12 @@ impl Core {
                     let answer = serialize(&db.lock().unwrap().get(&full_key)).unwrap();
                     Ok(answer)
                 }
-                "set" => todo!(),
+                "set" => {
+                    let (table, key, value) = deserialize::<(&str, &str, Vec<u8>)>(pld).unwrap();
+                    let full_key = format!("{}:{}", table, key);
+                    db.lock().unwrap().insert(full_key, value);
+                    Ok(vec![])
+                }
                 "del" => todo!(),
                 "get_prefix" => todo!(),
                 "set_many" => todo!(),
