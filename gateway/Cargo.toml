@@ -12,3 +12,4 @@ common = { path = "../common" }
 mime = "0.3"
 ipc = { path = "../ipc" }
 simple_logger = "2.1"
+shared = { path = "../shared" }

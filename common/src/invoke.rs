@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::InvocationError;
 
-use self::http::{HttpReq, HttpRes};
-pub mod http;
+use shared::http::{HttpReq, HttpRes};
 
 /// Common shorthand for `Result<InvocationResponse, InvocationError>`. This is the type returned by the Zhur engine.
 pub type InvocationResult = Result<InvocationResponse, InvocationError>;

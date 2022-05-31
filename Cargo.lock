@@ -251,9 +251,9 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "chrono",
- "http",
  "log",
  "serde",
+ "shared",
  "thiserror",
  "tokio",
 ]
@@ -371,6 +371,7 @@ dependencies = [
  "common",
  "ipc",
  "mime",
+ "shared",
  "simple_logger",
 ]
 
@@ -896,6 +897,15 @@ dependencies = [
  "form_urlencoded",
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "http",
+ "log",
  "serde",
 ]
 

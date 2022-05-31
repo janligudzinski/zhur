@@ -2,12 +2,10 @@ use std::{net::SocketAddr, str::FromStr};
 
 use common::{
     errors::InvocationError,
-    invoke::{
-        http::{HttpReq, HttpRes},
-        Invocation, InvocationContext, InvocationResponse, InvocationResult,
-    },
+    invoke::{Invocation, InvocationContext, InvocationResponse, InvocationResult},
     prelude::{log::*, tokio},
 };
+use shared::http::*;
 
 use axum::{body::Body, body::HttpBody, extract::Path, http::Request, routing::any, Router};
 use ipc::UnixClient;
@@ -77,15 +75,15 @@ async fn http_invoke_handler(
         None => false,
     };
     let req_body = match req.body_mut().data().await {
-        None => common::invoke::http::HttpBody::default(),
+        None => shared::http::HttpBody::default(),
         Some(res) => match res {
             Ok(b) => {
                 let bytes = b.to_vec();
                 if is_plaintext {
                     let text = String::from_utf8(bytes).expect("should be plaintext");
-                    common::invoke::http::HttpBody::Text(text)
+                    shared::http::HttpBody::Text(text)
                 } else {
-                    common::invoke::http::HttpBody::Binary(bytes)
+                    shared::http::HttpBody::Binary(bytes)
                 }
             }
             Err(e) => {
