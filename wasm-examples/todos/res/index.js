@@ -6,78 +6,78 @@ let state = {
 };
 
 const edit_todo = (id, text) => {
-    fetch("/edit", {
+    fetch("/zhur/todos/edit", {
         method: "POST",
-        body: JSON.stringify({id: id, text: text})
+        body: JSON.stringify({ id: id, text: text })
     })
-    .then(response => {
-        if (response.ok) {
-            load_todos();
-        } else {
-            alert("Error");
-        }
-    });
+        .then(response => {
+            if (response.ok) {
+                load_todos();
+            } else {
+                alert("Error");
+            }
+        });
 }
 
 const post_todo = (text) => {
-    fetch("/add", {
+    fetch("/zhur/todos/add", {
         method: "POST",
-        body: JSON.stringify({text: text})
+        body: JSON.stringify({ text: text })
     })
-    .then(response => {
-        if (response.ok) {
-            state.add_todo_text = "";
-            load_todos();
-        } else {
-            alert("Error");
-        }
-    });
+        .then(response => {
+            if (response.ok) {
+                state.add_todo_text = "";
+                load_todos();
+            } else {
+                alert("Error");
+            }
+        });
 }
 const load_todos = () => {
-    fetch("/todos")
-    .then(response => response.json())
-    .then(data => {
-        state.todos = data;
-        m.redraw();
-    })
+    fetch("/zhur/todos/todos")
+        .then(response => response.json())
+        .then(data => {
+            state.todos = data;
+            m.redraw();
+        })
 }
 const mark_todo = (id, complete) => {
-    fetch("/mark", {
+    fetch("/zhur/todos/mark", {
         method: "POST",
-        body: JSON.stringify({id: id, complete: complete})
+        body: JSON.stringify({ id: id, complete: complete })
     })
-    .then(response => {
-        if (response.ok) {
-            load_todos();
-        } else {
-            alert("Error");
-        }
-    });
+        .then(response => {
+            if (response.ok) {
+                load_todos();
+            } else {
+                alert("Error");
+            }
+        });
 }
 const del_todo = (id) => {
-    fetch("/del", {
+    fetch("/zhur/todos/del", {
         method: "POST",
-        body: JSON.stringify({id: id})
+        body: JSON.stringify({ id: id })
     })
-    .then(response => {
-        if (response.ok) {
-            load_todos();
-        } else {
-            alert("Error");
-        }
-    });
+        .then(response => {
+            if (response.ok) {
+                load_todos();
+            } else {
+                alert("Error");
+            }
+        });
 }
 const clear_complete = () => {
-    fetch("/clear_complete", {
+    fetch("/zhur/todos/clear_complete", {
         method: "POST"
     })
-    .then(response => {
-        if (response.ok) {
-            load_todos();
-        } else {
-            alert("Error");
-        }
-    });
+        .then(response => {
+            if (response.ok) {
+                load_todos();
+            } else {
+                alert("Error");
+            }
+        });
 }
 
 const TodoRow = {
@@ -94,16 +94,18 @@ const TodoRow = {
         let del_button = m("button", {
             onclick: () => del_todo(vnode.attrs.id)
         }, "Delete");
-        return m("p", {class: vnode.attrs.complete ? "complete" : null}, [edit_button, mark_button, del_button, `Todo #${vnode.attrs.id}: ${vnode.attrs.text}`]);
+        return m("p", { class: vnode.attrs.complete ? "complete" : null }, [edit_button, mark_button, del_button, `Todo #${vnode.attrs.id}: ${vnode.attrs.text}`]);
     }
 }
 
 const TodoAdder = {
     view: () => {
-        let input = m("input", {type: "text", value: state.add_todo_text, oninput: (e) => {
-            state.add_todo_text = e.target.value
-        }})
-        let add_button = m("button", {disabled: state.add_todo_text.length < 1, onclick: () => post_todo(state.add_todo_text)}, "Add todo");
+        let input = m("input", {
+            type: "text", value: state.add_todo_text, oninput: (e) => {
+                state.add_todo_text = e.target.value
+            }
+        })
+        let add_button = m("button", { disabled: state.add_todo_text.length < 1, onclick: () => post_todo(state.add_todo_text) }, "Add todo");
         return m("div", [input, add_button]);
     }
 }
@@ -115,7 +117,7 @@ const TodoList = {
             content.push(m("p", "No todos yet. Add some!"));
         } else {
             state.todos.forEach(each => {
-                content.push(m(TodoRow, {id: each.id, text: each.text, complete: each.complete}))
+                content.push(m(TodoRow, { id: each.id, text: each.text, complete: each.complete }))
             });
         }
         return m.fragment(content);
@@ -127,7 +129,7 @@ const MainView = {
         return m("div", [
             m(TodoList),
             m(TodoAdder),
-            m("button", {onclick: () => clear_complete()}, "Clear completed todos")
+            m("button", { onclick: () => clear_complete() }, "Clear completed todos")
         ]);
     }
 };
