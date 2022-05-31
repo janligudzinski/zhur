@@ -97,7 +97,8 @@ async fn http_invoke_handler(
         },
     };
     let (parts, _) = req.into_parts();
-    let parts = HttpReqParts::from(parts);
+    let mut parts = HttpReqParts::from(parts);
+    parts.path = raw_path; // strip owner and app info
     let req = HttpReq { body, parts };
     match invoke_http(owner, app, req).await {
         Ok(http_res) => Ok(HttpResWrapper(http_res)),
