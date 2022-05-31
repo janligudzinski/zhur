@@ -13,6 +13,8 @@ pub mod error;
 pub mod http;
 /// Metadata methods.
 pub mod meta;
+/// Basic "web framework"
+pub mod web;
 /// This macro sets up all the Zhur SDK boilerplate for a text function that takes a UTF-8 `String` and returns another.
 #[macro_export]
 macro_rules! text_function {

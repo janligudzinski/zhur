@@ -1,6 +1,7 @@
 use askama::Template;
 use zhur_sdk::http::*;
 use zhur_sdk::http_function;
+use zhur_sdk::web::*;
 #[derive(Template)]
 #[template(path = "index.html")]
 /// This repetitive struct, as well as its `From<HttpReq>` impl, are required because Askama can't deal with BTreeMaps well.
