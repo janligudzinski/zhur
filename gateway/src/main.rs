@@ -22,8 +22,8 @@ async fn invoke_http(owner: String, app: String, payload: HttpReq) -> anyhow::Re
         ctx: InvocationContext::new(owner, app),
         payload,
     };
-    let response = client.request::<_, InvocationResponse>(&invocation).await?;
-    match response {
+    let response = client.request::<_, InvocationResult>(&invocation).await?;
+    match response? {
         InvocationResponse::HttpResponse { ctx, payload } => {
             info!(
                 "Got HTTP response from engine for {}:{}.",
