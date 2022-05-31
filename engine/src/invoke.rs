@@ -2,6 +2,7 @@ use common::{
     errors::InvocationError,
     invoke::{Invocation, InvocationContext, InvocationResponse},
 };
+use shared::http::HttpReq;
 
 use crate::core::Core;
 
@@ -17,14 +18,25 @@ fn handle_text_invocation(
         payload: response,
     })
 }
+/// Handles an HTTP invocation.
+fn handle_http_invocation(
+    ctx: InvocationContext,
+    payload: HttpReq,
+    core: &mut Core,
+) -> Result<InvocationResponse, InvocationError> {
+    let response = core.invoke_http(&payload)?;
+    Ok(InvocationResponse::HttpResponse {
+        ctx,
+        payload: response,
+    })
+}
 
 pub fn handle_invocation(
     invocation: Invocation,
     core: &mut Core,
 ) -> Result<InvocationResponse, InvocationError> {
-    if let Invocation::TextInvocation { ctx, payload } = invocation {
-        handle_text_invocation(ctx, payload, core)
-    } else {
-        panic!("HTTP invocations not supported yet!")
+    match invocation {
+        Invocation::TextInvocation { ctx, payload } => handle_text_invocation(ctx, payload, core),
+        Invocation::HttpInvocation { ctx, payload } => handle_http_invocation(ctx, payload, core),
     }
 }

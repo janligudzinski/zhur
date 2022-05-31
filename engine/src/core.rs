@@ -14,6 +14,7 @@ use common::{
         *,
     },
 };
+use shared::http::{HttpReq, HttpRes};
 use wapc::{WapcHost, WebAssemblyEngineProvider};
 use wasm3_provider::Wasm3EngineProvider;
 
@@ -30,6 +31,21 @@ pub struct Core {
 }
 
 impl Core {
+    pub fn invoke_http(&mut self, payload: &HttpReq) -> Result<HttpRes, InvocationError> {
+        let req_bytes = bincode::serialize(payload).map_err(|_| InvocationError::BadHttpRequest)?;
+        let result = self
+            .runtime
+            .call("http", &req_bytes)
+            .map_err(|e| InvocationError::ExecutionError(e.to_string()));
+        // Check if the guest program has panicked.
+        if let Some(panic_info) = self.panic_info() {
+            return Err(InvocationError::ExecutionError(panic_info));
+        }
+        let result = result?;
+        let output = bincode::deserialize::<HttpRes>(&result)
+            .map_err(|_| InvocationError::InvalidTextOutput)?;
+        Ok(output)
+    }
     pub fn invoke_text(&mut self, payload: &str) -> Result<String, InvocationError> {
         let str_bytes =
             bincode::serialize(payload).map_err(|_| InvocationError::InvalidTextPayload)?;

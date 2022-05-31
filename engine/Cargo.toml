@@ -11,6 +11,7 @@ clap = { version = "3.1.8", features = ["derive"] }
 common = { path = "../common" }
 ipc = { path = "../ipc" }
 serde_json = "1.0"
+shared = { path = "../shared" }
 simple_logger = "2.1"
 wapc = "1.0"
 wasm3-provider = "1.0.0"

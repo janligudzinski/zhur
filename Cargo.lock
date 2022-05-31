@@ -289,6 +289,7 @@ dependencies = [
  "common",
  "ipc",
  "serde_json",
+ "shared",
  "simple_logger",
  "wapc",
  "wasm3-provider",

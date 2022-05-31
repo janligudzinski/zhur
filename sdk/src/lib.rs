@@ -63,7 +63,7 @@ macro_rules! http_function {
         }
         #[no_mangle]
         pub extern "C" fn wapc_init() {
-            zhur_sdk::__internals::wapc_guest::register_function("handle_http", outer_handler);
+            zhur_sdk::__internals::wapc_guest::register_function("http", outer_handler);
         }
     };
 }
