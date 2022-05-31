@@ -7,8 +7,13 @@ use common::{
 };
 use shared::http::*;
 
-use axum::{body::Body, body::HttpBody, extract::Path, http::Request, routing::any, Router};
+use axum::{
+    body::Body, body::HttpBody, extract::Path, http::Request, response::IntoResponse, routing::any,
+    Router,
+};
 use ipc::UnixClient;
+mod conversion;
+use conversion::*;
 
 async fn invoke_http(owner: String, app: String, payload: HttpReq) -> anyhow::Result<HttpRes> {
     let stream = tokio::net::UnixStream::connect("/tmp/zhur-engine.sck").await?;
@@ -68,7 +73,7 @@ async fn text_invoke_handler(
 async fn http_invoke_handler(
     Path((owner, app, raw_path)): Path<(String, String, Option<String>)>,
     mut req: Request<Body>,
-) {
+) -> Result<impl IntoResponse, impl IntoResponse> {
     let raw_path = raw_path.unwrap_or("/".to_string());
     let is_plaintext = match req.headers().get(&axum::http::header::CONTENT_TYPE) {
         Some(c) => !is_mimetype_binary(c.to_str().unwrap_or("application/octet-stream")),
@@ -94,7 +99,10 @@ async fn http_invoke_handler(
     let (parts, _) = req.into_parts();
     let parts = HttpReqParts::from(parts);
     let req = HttpReq { body, parts };
-    invoke_http(owner, app, req);
+    match invoke_http(owner, app, req).await {
+        Ok(http_res) => Ok(HttpResWrapper(http_res)),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 fn is_mimetype_binary(mimetype: &str) -> bool {
@@ -122,7 +130,9 @@ fn is_mimetype_binary(mimetype: &str) -> bool {
 #[tokio::main]
 async fn main() {
     simple_logger::init().unwrap();
-    let app = Router::new().route("/text/:owner/:app/*raw_path", any(text_invoke_handler));
+    let app = Router::new()
+        .route("/text/:owner/:app/*raw_path", any(text_invoke_handler))
+        .route("/:owner/:app/*raw_path", any(http_invoke_handler));
     let server = axum::Server::bind(&SocketAddr::from_str("127.0.0.1:8000").unwrap())
         .serve(app.into_make_service());
 
