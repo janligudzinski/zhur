@@ -1,25 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zhur Echo App</title>
 </head>
+
 <body>
     <h1>Zhur Echo App, invoked as <code>{{owner}}:{{app_name}}</code></h1>
     <p>Your request looked like this:</p>
     <h2>Basic info</h2>
     <table>
-        <tr><th>Method</th><td>{{method}}</td></tr>
-        <tr><th>Path</th><td>{{path}}</td></tr>
-        <tr><th>IP address</th><td>{{ip_addr}}</td></tr>
-        <tr><th>Unix epoch</th><td>{{timestamp}}</td></tr>
+        <tr>
+            <th>Method</th>
+            <td>{{method}}</td>
+        </tr>
+        <tr>
+            <th>Path</th>
+            <td>{{path}}</td>
+        </tr>
+        <tr>
+            <th>Unix epoch</th>
+            <td>{{timestamp}}</td>
+        </tr>
     </table>
     <h2>Query parameters</h2>
     {% if !query_params.is_empty() %}
     <table>
         {% for (key, value) in query_params %}
-        <tr><th>{{key}}</th><td>{{value}}</td></tr>
+        <tr>
+            <th>{{key}}</th>
+            <td>{{value}}</td>
+        </tr>
         {% endfor %}
     </table>
     {% else %}
@@ -29,7 +42,10 @@
     {% if !headers.is_empty() %}
     <table>
         {% for (key, value) in headers %}
-            <tr><th>{{key}}</th><td>{{value}}</td></tr>
+        <tr>
+            <th>{{key}}</th>
+            <td>{{value}}</td>
+        </tr>
         {% endfor %}
     </table>
     {% else %}
@@ -39,7 +55,10 @@
     {% if !cookies.is_empty() %}
     <table>
         {% for (key, value) in cookies %}
-            <tr><th>{{key}}</th><td>{{value}}</td></tr>
+        <tr>
+            <th>{{key}}</th>
+            <td>{{value}}</td>
+        </tr>
         {% endfor %}
     </table>
     {% else %}
@@ -47,14 +66,15 @@
     {% endif %}
     <h2>Body</h2>
     {% match body %}
-        {% when ReqBody::Bytes with (val) %}
-        <p>Raw bytes:</p>
-        <pre>{{ format!("{:?}", val) }}</pre>
-        {% when ReqBody::ValidText with (text) %}
-        <p>Valid UTF-8 text:</p>
-        <pre>{{text}}</pre>
-        {% when ReqBody::Empty %}
-        <p>Your request had an empty body.</p>
+    {% when ReqBody::Bytes with (val) %}
+    <p>Raw bytes:</p>
+    <pre>{{ format!("{:?}", val) }}</pre>
+    {% when ReqBody::ValidText with (text) %}
+    <p>Valid UTF-8 text:</p>
+    <pre>{{text}}</pre>
+    {% when ReqBody::Empty %}
+    <p>Your request had an empty body.</p>
     {% endmatch %}
 </body>
+
 </html>
