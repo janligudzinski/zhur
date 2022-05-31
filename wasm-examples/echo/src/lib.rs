@@ -23,12 +23,11 @@ enum ReqBody {
 }
 impl From<HttpReq> for ReqTemplate {
     fn from(req: HttpReq) -> Self {
-        let now = zhur_sdk::svc::datetime::now();
+        let now = zhur_sdk::datetime::now();
         Self {
-            method: req.method,
-            path: req.path,
-            ip_addr: req.ip_addr,
-            headers: req.headers.into_iter().collect(),
+            method: req.parts.method,
+            path: req.parts.path,
+            headers: req.parts.headers.into_iter().collect(),
             cookies: req.cookies.into_iter().collect(),
             query_params: req.query_params.into_iter().collect(),
             body: {

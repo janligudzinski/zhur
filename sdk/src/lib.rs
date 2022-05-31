@@ -9,6 +9,8 @@ pub mod datetime;
 pub mod db;
 /// Error types.
 pub mod error;
+/// HTTP-related types.
+pub mod http;
 /// Metadata methods.
 pub mod meta;
 /// This macro sets up all the Zhur SDK boilerplate for a text function that takes a UTF-8 `String` and returns another.

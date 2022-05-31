@@ -74,7 +74,7 @@ async fn http_invoke_handler(
         Some(c) => !is_mimetype_binary(c.to_str().unwrap_or("application/octet-stream")),
         None => false,
     };
-    let req_body = match req.body_mut().data().await {
+    let body = match req.body_mut().data().await {
         None => shared::http::HttpBody::default(),
         Some(res) => match res {
             Ok(b) => {
@@ -91,6 +91,10 @@ async fn http_invoke_handler(
             }
         },
     };
+    let (parts, _) = req.into_parts();
+    let parts = HttpReqParts::from(parts);
+    let req = HttpReq { body, parts };
+    invoke_http(owner, app, req);
 }
 
 fn is_mimetype_binary(mimetype: &str) -> bool {

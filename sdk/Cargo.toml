@@ -10,4 +10,5 @@ bincode = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 wapc-guest = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+shared = { path = "../shared" }
 thiserror = "1.0"

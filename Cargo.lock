@@ -1386,6 +1386,7 @@ dependencies = [
  "bincode",
  "chrono",
  "serde",
+ "shared",
  "thiserror",
  "wapc-guest",
 ]
