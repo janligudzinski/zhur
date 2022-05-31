@@ -24,8 +24,9 @@ impl From<HttpReq> for ReqTemplate {
     fn from(req: HttpReq) -> Self {
         let now = zhur_sdk::datetime::now();
         let body = match req.body {
-            HttpBody::Binary(bytes) => ReqBody::Bytes(bytes),
-            HttpBody::Text(text) => ReqBody::ValidText(text),
+            Some(HttpBody::Binary(bytes)) => ReqBody::Bytes(bytes),
+            Some(HttpBody::Text(text)) => ReqBody::ValidText(text),
+            None => ReqBody::Empty,
         };
         Self {
             method: req.parts.method,

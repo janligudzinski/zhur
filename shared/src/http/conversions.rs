@@ -66,7 +66,11 @@ impl From<Request<Vec<u8>>> for HttpReq {
         let (parts, body) = value.into_parts();
         HttpReq {
             parts: parts.into(),
-            body: HttpBody::Binary(body),
+            body: if !body.is_empty() {
+                Some(HttpBody::Binary(body))
+            } else {
+                None
+            },
         }
     }
 }
@@ -75,7 +79,11 @@ impl From<Request<String>> for HttpReq {
         let (parts, body) = value.into_parts();
         HttpReq {
             parts: parts.into(),
-            body: HttpBody::Text(body),
+            body: if !body.is_empty() {
+                Some(HttpBody::Text(body))
+            } else {
+                None
+            },
         }
     }
 }

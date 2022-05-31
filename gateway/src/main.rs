@@ -80,15 +80,15 @@ async fn http_invoke_handler(
         None => false,
     };
     let body = match req.body_mut().data().await {
-        None => shared::http::HttpBody::default(),
+        None => None,
         Some(res) => match res {
             Ok(b) => {
                 let bytes = b.to_vec();
                 if is_plaintext {
                     let text = String::from_utf8(bytes).expect("should be plaintext");
-                    shared::http::HttpBody::Text(text)
+                    Some(shared::http::HttpBody::Text(text))
                 } else {
-                    shared::http::HttpBody::Binary(bytes)
+                    Some(shared::http::HttpBody::Binary(bytes))
                 }
             }
             Err(e) => {

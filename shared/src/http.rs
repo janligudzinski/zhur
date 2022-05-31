@@ -24,7 +24,7 @@ pub struct HttpReq {
     /// Non-body parts of the request.
     pub parts: HttpReqParts,
     /// The body of the request.
-    pub body: HttpBody,
+    pub body: Option<HttpBody>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
