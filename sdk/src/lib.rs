@@ -63,6 +63,15 @@ macro_rules! http_function {
         }
         #[no_mangle]
         pub extern "C" fn wapc_init() {
+            std::panic::set_hook(Box::new(|p| {
+                zhur_sdk::__internals::wapc_guest::host_call(
+                    "zhur",
+                    "internals",
+                    "panic",
+                    p.to_string().as_bytes(),
+                )
+                .unwrap();
+            }));
             zhur_sdk::__internals::wapc_guest::register_function("http", outer_handler);
         }
     };
