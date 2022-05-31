@@ -1,2 +1,2 @@
 [workspace]
-members = ["hello", "echo"]
+members = ["hello", "echo", "todos"]
