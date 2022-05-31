@@ -46,7 +46,11 @@ impl Core {
             .map_err(|_| InvocationError::InvalidTextOutput)?;
         Ok(output)
     }
-    pub fn new(engine: Box<dyn WebAssemblyEngineProvider>) -> Result<Self, InvocationError> {
+    pub fn new(
+        engine: Box<dyn WebAssemblyEngineProvider>,
+        owner: String,
+        app_name: String,
+    ) -> Result<Self, InvocationError> {
         let panic_holder = Arc::new(Mutex::new(None));
         let callback_holder = panic_holder.clone();
         let db_holder = Arc::new(Mutex::new(BTreeMap::new()));
@@ -65,6 +69,10 @@ impl Core {
                         .expect("Could not lock panic string holder for writing.") =
                         Some(panic_string.to_owned());
                     Ok(Vec::<u8>::new())
+                }
+                "whoami" => {
+                    let response_bytes = serialize(&(&owner, &app_name)).unwrap();
+                    Ok(response_bytes)
                 }
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             },
@@ -158,11 +166,13 @@ impl Core {
     pub fn start_core_thread(
         code: Vec<u8>,
         mut inv_rx: UnboundedReceiver<(Invocation, UnboundedSender<InvocationResult>)>,
+        owner: String,
+        app_name: String,
     ) {
         std::thread::spawn(move || {
             info!("Core thread starting.");
             let provider = Wasm3EngineProvider::new(&code);
-            let mut core = Self::new(Box::new(provider)).unwrap();
+            let mut core = Self::new(Box::new(provider), owner, app_name).unwrap();
             loop {
                 let (invocation, res_tx) = match inv_rx.blocking_recv() {
                     Some(r) => r,

@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
     let (inv_tx, inv_rx) =
         mpsc::unbounded_channel::<(Invocation, UnboundedSender<InvocationResult>)>();
     // Start core thread.
-    Core::start_core_thread(code, inv_rx);
+    Core::start_core_thread(code, inv_rx, flags.owner, flags.name);
     // Start server.
     std::fs::remove_file(ENGINE_SOCKET_PATH).ok();
     let listener = UnixListener::bind(ENGINE_SOCKET_PATH)?;
