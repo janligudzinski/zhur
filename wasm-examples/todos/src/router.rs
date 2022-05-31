@@ -1,7 +1,6 @@
-
+use crate::routes;
 use zhur_sdk::http::*;
 use zhur_sdk::web::*;
-use crate::routes;
 
 fn not_found() -> impl Responder {
     StatusCode(404, Text(String::from("No such route.")))
@@ -13,34 +12,35 @@ fn unsupported_method() -> impl Responder {
 }
 
 pub fn route(req: &HttpReq, res: &mut HttpRes) {
-    res.headers.insert("Access-Control-Allow-Origin".into(), "*".into()); // for localhost development
-    match req.path.as_str() {
+    res.headers
+        .insert("Access-Control-Allow-Origin".into(), "*".into()); // for localhost development
+    match req.parts.path.as_str() {
         "/" => routes::index().modify_response(res),
         "/index.js" => routes::index_js().modify_response(res),
-        "/todos" => match req.method.as_str() {
+        "/todos" => match req.parts.method.as_str() {
             "GET" => routes::get_todos().modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        "/mark" => match req.method.as_str() {
+        "/mark" => match req.parts.method.as_str() {
             "POST" => routes::mark_todo(req).modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        "/edit" => match req.method.as_str() {
+        "/edit" => match req.parts.method.as_str() {
             "POST" => routes::edit_todo(req).modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        "/clear_complete" => match req.method.as_str() {
+        "/clear_complete" => match req.parts.method.as_str() {
             "POST" => routes::clear_complete_todos().modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        "/del" => match req.method.as_str() {
+        "/del" => match req.parts.method.as_str() {
             "POST" => routes::delete_todo(req).modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        "/add" => match req.method.as_str() {
+        "/add" => match req.parts.method.as_str() {
             "POST" => routes::add_todo(req).modify_response(res),
-            _ => unsupported_method().modify_response(res)
+            _ => unsupported_method().modify_response(res),
         },
-        _ => not_found().modify_response(res)
+        _ => not_found().modify_response(res),
     }
 }
