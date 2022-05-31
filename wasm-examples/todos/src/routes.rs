@@ -1,5 +1,6 @@
 use crate::data;
 use crate::todo::*;
+use serde::de::DeserializeOwned;
 use zhur_sdk::http::*;
 use zhur_sdk::web::*;
 const INDEX_HTML: &str = include_str!("../res/index.html");
@@ -12,82 +13,63 @@ pub fn index_js() -> File {
     File(INDEX_JS.to_vec(), Some(String::from("text/javascript")))
 }
 
-pub fn get_todos() -> Result<Json<Vec<Todo>>, StatusCode<Html>> {
-    let todos: Vec<Todo> = crate::data::get_all_todos();
-    Ok(Json(todos))
-}
-pub fn add_todo(req: &HttpReq) -> Result<(), StatusCode<Text>> {
-    let new_todo: TodoNewRequest = match req.body {
+/// Helper function for extracting JSON data from request bodies.
+fn json_from_body<T: DeserializeOwned>(req: &HttpReq) -> Result<T, impl Responder> {
+    let body = match &req.body {
         None => return Err(StatusCode(422, Text(String::from("No body was provided.")))),
-        Some(HttpBody::Binary(t)) => match serde_json::from_slice(&t) {
-            Ok(todo) => todo,
-            Err(_) => {
-                return Err(StatusCode(
-                    400,
-                    Text(String::from(
-                        "Your request body couldn't be deserialized into a new Todo.",
-                    )),
-                ))
-            }
-        },
-        Some(HttpBody::Text(t)) => match serde_json::from_str(&t) {
-            Ok(todo) => todo,
-            Err(_) => {
-                return Err(StatusCode(
-                    400,
-                    Text(String::from(
-                        "Your request body couldn't be deserialized into a new Todo.",
-                    )),
-                ))
-            }
-        },
+        Some(body) => body,
+    };
+    let deser_result = match body {
+        HttpBody::Binary(bytes) => serde_json::from_slice::<T>(bytes),
+        HttpBody::Text(text) => serde_json::from_str::<T>(text),
+    };
+    deser_result.map_err(|e| {
+        StatusCode(
+            422,
+            Text(format!(
+                "There was an error extracting data out of the request body: {}",
+                e.to_string()
+            )),
+        )
+    })
+}
+
+pub fn get_todos() -> impl Responder {
+    let todos: Vec<Todo> = crate::data::get_all_todos();
+    Json(todos)
+}
+pub fn add_todo(req: &HttpReq) -> Result<impl Responder, impl Responder> {
+    let new_todo: TodoNewRequest = match json_from_body(req) {
+        Ok(r) => r,
+        Err(e) => return Err(e),
     };
     data::add_todo(new_todo.text);
     Ok(())
 }
-pub fn mark_todo(req: &HttpReq) -> Result<(), StatusCode<Text>> {
-    let marked: TodoMarkRequest = match serde_json::from_slice(&req.body) {
-        Ok(todo) => todo,
-        Err(_) => {
-            return Err(StatusCode(
-                400,
-                Text(String::from(
-                    "Your request body couldn't be deserialized into a Todo mark request.",
-                )),
-            ))
-        }
+pub fn mark_todo(req: &HttpReq) -> Result<(), impl Responder> {
+    let marked: TodoMarkRequest = match json_from_body(req) {
+        Ok(r) => r,
+        Err(e) => return Err(e),
     };
     data::mark_todo(marked.id, marked.complete);
     Ok(())
 }
-pub fn edit_todo(req: &HttpReq) -> Result<(), StatusCode<Text>> {
-    let edit: TodoEditRequest = match serde_json::from_slice(&req.body) {
-        Ok(todo) => todo,
-        Err(_) => {
-            return Err(StatusCode(
-                400,
-                Text(String::from(
-                    "Your request body couldn't be deserialized into a Todo edit request.",
-                )),
-            ))
-        }
+pub fn edit_todo(req: &HttpReq) -> Result<(), impl Responder> {
+    let edit: TodoEditRequest = match json_from_body(req) {
+        Ok(r) => r,
+        Err(e) => return Err(e),
     };
     data::edit_todo(edit.id, edit.text);
     Ok(())
 }
-pub fn clear_complete_todos() -> Result<(), StatusCode<Text>> {
+pub fn clear_complete_todos() -> impl Responder {
     data::clear_done_todos();
-    Ok(())
+    ()
 }
-pub fn delete_todo(req: &HttpReq) -> Result<(), StatusCode<Text>> {
-    let del: TodoDelRequest = match serde_json::from_slice(&req.body) {
-        Ok(todo) => todo,
-        Err(_) => {
-            return Err(StatusCode(
-                400,
-                Text("Couldn't parse your delete todo request.".to_string()),
-            ))
-        }
+pub fn delete_todo(req: &HttpReq) -> Result<(), impl Responder> {
+    let del: TodoDelRequest = match json_from_body(req) {
+        Ok(r) => r,
+        Err(e) => return Err(e),
     };
     data::delete_todo(del.id);
     Ok(())
