@@ -12,7 +12,9 @@ pub fn get<T: DeserializeOwned>(table: &str, key: &str) -> Result<Option<T>, DbE
         deserialize::<Option<Vec<u8>>>(&response).map_err(|_| DbError::DeserializationError)?;
     match response {
         None => Ok(None),
-        Some(bytes) => deserialize::<Option<T>>(&bytes).map_err(|_| DbError::DeserializationError),
+        Some(bytes) => deserialize::<T>(&bytes)
+            .map_err(|_| DbError::DeserializationError)
+            .map(|ok| Some(ok)),
     }
 }
 /// Set a single value at the given table and key.

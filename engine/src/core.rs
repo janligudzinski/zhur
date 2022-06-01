@@ -69,7 +69,7 @@ impl Core {
     ) -> Result<Self, InvocationError> {
         let panic_holder = Arc::new(Mutex::new(None));
         let callback_holder = panic_holder.clone();
-        let db_holder = Arc::new(Mutex::new(BTreeMap::new()));
+        let db_holder = Arc::new(Mutex::new(BTreeMap::<String, Vec<u8>>::new()));
         let db = db_holder.clone();
         let host_callback = move |_id: u64, _bd: &str, ns: &str, op: &str, pld: &[u8]| match ns {
             "internals" => match op {
@@ -103,13 +103,16 @@ impl Core {
                 "get" => {
                     let (table, key) = deserialize::<(&str, &str)>(pld).unwrap();
                     let full_key = format!("{}:{}", table, key);
-                    let answer = serialize(&db.lock().unwrap().get(&full_key)).unwrap();
+                    let value = { db.lock().unwrap().get(&full_key).map(|r| r.to_owned()) };
+                    let answer = serialize(&value.to_owned()).unwrap();
                     Ok(answer)
                 }
                 "set" => {
                     let (table, key, value) = deserialize::<(&str, &str, Vec<u8>)>(pld).unwrap();
                     let full_key = format!("{}:{}", table, key);
-                    db.lock().unwrap().insert(full_key, value);
+                    {
+                        db.lock().unwrap().insert(full_key, value);
+                    }
                     Ok(vec![])
                 }
                 "del" => {
