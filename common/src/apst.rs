@@ -18,4 +18,6 @@ pub enum AppStoreRequest {
     GetAppCode { owner: String, app_name: String },
     /// Get the metadata for all apps for a given user.
     GetOwnedApps { owner: String },
+    /// Request state updates since last request made. This message type was implemented mostly so as not to have to implement pub/sub updates.
+    RequestUpdates,
 }
