@@ -4,6 +4,7 @@ use std::{
 };
 
 use common::{
+    db::{DbRequest, DbResponse},
     errors::InvocationError,
     invoke::{Invocation, InvocationResult},
     prelude::{
@@ -26,8 +27,6 @@ pub struct Core {
     /// A wrapper for panic info text returned by guest apps.
     // This has to be wrapped in an Arc and a Mutex because we want to be able to modify this data from closures.
     panic_holder: Arc<Mutex<Option<String>>>,
-    /// This is where we will hold the placeholder struct for database logic testing.
-    db_holder: Arc<Mutex<BTreeMap<String, Vec<u8>>>>,
 }
 
 impl Core {
@@ -64,6 +63,7 @@ impl Core {
     }
     pub fn new(
         engine: Box<dyn WebAssemblyEngineProvider>,
+        db_tx: UnboundedSender<(DbRequest, UnboundedSender<DbResponse>)>,
         owner: String,
         app_name: String,
     ) -> Result<Self, InvocationError> {
@@ -171,7 +171,6 @@ impl Core {
         Ok(Self {
             runtime: host,
             panic_holder,
-            db_holder,
         })
     }
     /// Retrieves panic info after an invocation, if there was any.
@@ -185,13 +184,14 @@ impl Core {
     pub fn start_core_thread(
         code: Vec<u8>,
         mut inv_rx: UnboundedReceiver<(Invocation, UnboundedSender<InvocationResult>)>,
+        db_tx: UnboundedSender<(DbRequest, UnboundedSender<DbResponse>)>,
         owner: String,
         app_name: String,
     ) {
         std::thread::spawn(move || {
             info!("Core thread starting.");
             let provider = Wasm3EngineProvider::new(&code);
-            let mut core = Self::new(Box::new(provider), owner, app_name).unwrap();
+            let mut core = Self::new(Box::new(provider), db_tx, owner, app_name).unwrap();
             loop {
                 let (invocation, res_tx) = match inv_rx.blocking_recv() {
                     Some(r) => r,
