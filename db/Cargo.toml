@@ -1,5 +1,5 @@
 [package]
-name = "gateway"
+name = "db"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-axum = "0.5"
 common = { path = "../common" }
-mime = "0.3"
 ipc = { path = "../ipc" }
 simple_logger = "2.1"
-shared = { path = "../shared" }
