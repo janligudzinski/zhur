@@ -1,3 +1,5 @@
+/// Application store module.
+pub mod apst;
 /// Database types.
 pub mod db;
 /// Error types.
