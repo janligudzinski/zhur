@@ -11,7 +11,7 @@ use common::{
         bincode::{deserialize, serialize},
         chrono,
         log::{info, warn},
-        tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender},
+        tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
         *,
     },
 };
@@ -69,109 +69,104 @@ impl Core {
     ) -> Result<Self, InvocationError> {
         let panic_holder = Arc::new(Mutex::new(None));
         let callback_holder = panic_holder.clone();
-        let db_holder = Arc::new(Mutex::new(BTreeMap::<String, Vec<u8>>::new()));
-        let db = db_holder.clone();
-        let host_callback = move |_id: u64, _bd: &str, ns: &str, op: &str, pld: &[u8]| match ns {
-            "internals" => match op {
-                "panic" => {
-                    let panic_string = std::str::from_utf8(pld)
-                        .expect("Panic string in a guest app was not a valid UTF-8 string");
-                    warn!(
-                        "A guest application has panicked with the panic info: {}",
-                        panic_string
-                    );
-                    *callback_holder
-                        .lock()
-                        .expect("Could not lock panic string holder for writing.") =
-                        Some(panic_string.to_owned());
-                    Ok(Vec::<u8>::new())
-                }
-                "whoami" => {
-                    let response_bytes = serialize(&(&owner, &app_name)).unwrap();
-                    Ok(response_bytes)
+        let host_callback = move |_id: u64, _bd: &str, ns: &str, op: &str, pld: &[u8]| {
+            let db_tx = db_tx.clone();
+            match ns {
+                "internals" => match op {
+                    "panic" => {
+                        let panic_string = std::str::from_utf8(pld)
+                            .expect("Panic string in a guest app was not a valid UTF-8 string");
+                        warn!(
+                            "A guest application has panicked with the panic info: {}",
+                            panic_string
+                        );
+                        *callback_holder
+                            .lock()
+                            .expect("Could not lock panic string holder for writing.") =
+                            Some(panic_string.to_owned());
+                        Ok(Vec::<u8>::new())
+                    }
+                    "whoami" => {
+                        let response_bytes = serialize(&(&owner, &app_name)).unwrap();
+                        Ok(response_bytes)
+                    }
+                    _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+                },
+                "datetime" => match op {
+                    "now" => {
+                        let naive_dt = chrono::Utc::now().naive_utc();
+                        Ok(bincode::serialize(&naive_dt).unwrap())
+                    }
+                    _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+                },
+                "db" => {
+                    let response = Self::process_db_request(owner.clone(), op, pld, db_tx);
+                    Ok(bincode::serialize(&response).unwrap())
                 }
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
-            },
-            "datetime" => match op {
-                "now" => {
-                    let naive_dt = chrono::Utc::now().naive_utc();
-                    Ok(bincode::serialize(&naive_dt).unwrap())
-                }
-                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
-            },
-            "db" => match op {
-                "get" => {
-                    let (table, key) = deserialize::<(&str, &str)>(pld).unwrap();
-                    let full_key = format!("{}:{}", table, key);
-                    let value = { db.lock().unwrap().get(&full_key).map(|r| r.to_owned()) };
-                    let answer = serialize(&value.to_owned()).unwrap();
-                    Ok(answer)
-                }
-                "set" => {
-                    let (table, key, value) = deserialize::<(&str, &str, Vec<u8>)>(pld).unwrap();
-                    let full_key = format!("{}:{}", table, key);
-                    {
-                        db.lock().unwrap().insert(full_key, value);
-                    }
-                    Ok(vec![])
-                }
-                "del" => {
-                    let (table, key) = deserialize::<(&str, &str)>(pld).unwrap();
-                    let full_key = format!("{}:{}", table, key);
-                    db.lock().unwrap().remove(&full_key);
-                    Ok(vec![])
-                }
-                "get_prefixed" => {
-                    let (table, key_prefix) = deserialize::<(&str, &str)>(pld).unwrap();
-                    let full_key_prefix = format!("{}:{}", table, key_prefix);
-                    let mut values_found = vec![];
-                    for (_key, value) in db
-                        .lock()
-                        .unwrap()
-                        .iter()
-                        .filter(|(key, _)| key.starts_with(&full_key_prefix))
-                    {
-                        values_found.push(value.clone());
-                    }
-                    let answer = serialize(&values_found).unwrap();
-                    Ok(answer)
-                }
-                "del_prefixed" => {
-                    let (table, key_prefix) = deserialize::<(&str, &str)>(pld).unwrap();
-                    let full_key_prefix = format!("{}:{}", table, key_prefix);
-                    let mut del_counter = 0u64;
-                    let mut db = db.lock().unwrap();
-                    let keys = {
-                        db.keys()
-                            .filter(|key| key.starts_with(&full_key_prefix))
-                            .map(|key| key.to_owned())
-                            .collect::<Vec<_>>()
-                    };
-                    for key in keys {
-                        del_counter += 1;
-                        db.remove(&key);
-                    }
-                    Ok(serialize(&del_counter).unwrap())
-                }
-                "set_many" => {
-                    let (table, pairs) = deserialize::<(&str, Vec<(&str, Vec<u8>)>)>(pld).unwrap();
-                    let mut db = db.lock().unwrap();
-                    for pair in pairs {
-                        let full_key = format!("{}:{}", table, pair.0);
-                        db.insert(full_key, pair.1);
-                    }
-                    Ok(vec![])
-                }
-                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
-            },
-            _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+            }
         };
+
         let host = WapcHost::new(engine, Some(Box::new(host_callback)))
             .map_err(|e| InvocationError::HostInitializationError(e.to_string()))?;
         Ok(Self {
             runtime: host,
             panic_holder,
         })
+    }
+    fn process_db_request(
+        owner: String,
+        op: &str,
+        pld: &[u8],
+        db_tx: UnboundedSender<(DbRequest, UnboundedSender<DbResponse>)>,
+    ) -> DbResponse {
+        let (res_tx, mut res_rx) = unbounded_channel::<DbResponse>();
+        let request = match op {
+            "get" => {
+                let (table, key) = deserialize::<(String, String)>(pld).unwrap();
+                DbRequest::Get { owner, table, key }
+            }
+            "set" => {
+                let (table, key, value) = deserialize::<(String, String, Vec<u8>)>(pld).unwrap();
+                DbRequest::Set {
+                    owner,
+                    table,
+                    key,
+                    value,
+                }
+            }
+            "del" => {
+                let (table, key) = deserialize::<(String, String)>(pld).unwrap();
+                DbRequest::Del { owner, table, key }
+            }
+            "get_prefixed" => {
+                let (table, prefix) = deserialize::<(String, String)>(pld).unwrap();
+                DbRequest::GetPrefixed {
+                    owner,
+                    table,
+                    prefix,
+                }
+            }
+            "del_prefixed" => {
+                let (table, prefix) = deserialize::<(String, String)>(pld).unwrap();
+                DbRequest::DelPrefixed {
+                    owner,
+                    table,
+                    prefix,
+                }
+            }
+            "set_many" => {
+                let (table, pairs) = deserialize::<(String, Vec<(String, Vec<u8>)>)>(pld).unwrap();
+                DbRequest::SetMany {
+                    owner,
+                    table,
+                    pairs,
+                }
+            }
+            other => panic!("An unsupported db operation was attempted: {}", other),
+        };
+        db_tx.send((request, res_tx)).unwrap();
+        res_rx.blocking_recv().unwrap()
     }
     /// Retrieves panic info after an invocation, if there was any.
     pub fn panic_info(&self) -> Option<String> {
