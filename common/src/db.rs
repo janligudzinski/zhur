@@ -44,11 +44,24 @@ pub enum DbRequest {
 /// Type used for database responses.
 #[derive(Deserialize, Serialize, Debug)]
 pub enum DbResponse {
-    Value(Vec<u8>),
+    Value(Option<Vec<u8>>),
     SetOk,
     DeletedOk,
     ManyValues(Vec<Vec<u8>>),
-    DeletedManyOk(usize),
+    DeletedManyOk(u64),
     SetManyOk,
     InternalError(String),
+}
+impl DbResponse {
+    /// Serializes to a bincode form needed by the waPC apps.
+    pub fn serialize(self) -> Result<Vec<u8>, String> {
+        let bytes = match self {
+            DbResponse::Value(val) => bincode::serialize(&val).unwrap(),
+            DbResponse::ManyValues(vals) => bincode::serialize(&vals).unwrap(),
+            DbResponse::DeletedManyOk(num) => bincode::serialize(&num).unwrap(),
+            DbResponse::InternalError(e) => return Err(e),
+            _ => vec![],
+        };
+        Ok(bytes)
+    }
 }

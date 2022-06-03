@@ -10,3 +10,4 @@ anyhow = "1.0"
 common = { path = "../common" }
 ipc = { path = "../ipc" }
 simple_logger = "2.1"
+sled = "0.34"
