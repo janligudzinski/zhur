@@ -48,7 +48,7 @@ pub enum DbResponse {
     SetOk,
     DeletedOk,
     ManyValues(Vec<Vec<u8>>),
-    DeletedManyOk(usize),
+    DeletedManyOk(u64),
     SetManyOk,
     InternalError(String),
 }
