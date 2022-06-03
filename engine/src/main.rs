@@ -46,16 +46,15 @@ async fn main() -> anyhow::Result<()> {
     // Start server.
     std::fs::remove_file(ENGINE_SOCKET_PATH).ok();
     let listener = UnixListener::bind(ENGINE_SOCKET_PATH)?;
-    let db_conn = UnixStream::connect(DB_SOCKET_PATH).await?;
-    let db_client = ipc::UnixClient::new(1024 * 16, db_conn);
-    let db_client = Arc::new(Mutex::new(db_client));
+
     while let Ok((connection, _)) = listener.accept().await {
         let db_rx = db_rx.clone();
         let inv_tx = inv_tx.clone();
-        let db_client = db_client.clone();
         tokio::spawn(async move {
             info!("Connection accepted.");
             let mut server = ipc::UnixServer::new(1024 * 8, connection);
+            let db_conn = UnixStream::connect(DB_SOCKET_PATH).await.unwrap();
+            let mut db_client = ipc::UnixClient::new(1024 * 16, db_conn);
             loop {
                 let (inv_res_tx, mut inv_res_rx) = mpsc::unbounded_channel::<InvocationResult>();
                 let invocation = match server.get_request::<Invocation>().await {
@@ -81,11 +80,10 @@ async fn main() -> anyhow::Result<()> {
                         db_req = db_rx.recv() => {
                             info!("Core thread has made a DB request.");
                             let (db_req, res_sender) = db_req.unwrap();
-                            let mut db_client = db_client.lock().await;
                             let response: DbResponse = db_client.request(&db_req).await.unwrap();
                             info!("DB request was made.");
                             res_sender.send(response).unwrap();
-                            info!("DB request sent to core thread.");
+                            info!("DB response sent to core thread.");
                         },
                         // If the core thread has returned a response:
                         response = inv_res_rx.recv() => {
