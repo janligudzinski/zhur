@@ -52,3 +52,16 @@ pub enum DbResponse {
     SetManyOk,
     InternalError(String),
 }
+impl DbResponse {
+    /// Serializes to a bincode form needed by the waPC apps.
+    pub fn serialize(self) -> Result<Vec<u8>, String> {
+        let bytes = match self {
+            DbResponse::Value(val) => bincode::serialize(&val).unwrap(),
+            DbResponse::ManyValues(vals) => bincode::serialize(&vals).unwrap(),
+            DbResponse::DeletedManyOk(num) => bincode::serialize(&num).unwrap(),
+            DbResponse::InternalError(e) => return Err(e),
+            _ => vec![],
+        };
+        Ok(bytes)
+    }
+}

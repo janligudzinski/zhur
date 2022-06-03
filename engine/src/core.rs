@@ -101,7 +101,10 @@ impl Core {
                 },
                 "db" => {
                     let response = Self::process_db_request(owner.clone(), op, pld, db_tx);
-                    Ok(bincode::serialize(&response).unwrap())
+                    match response.serialize() {
+                        Ok(r) => Ok(r),
+                        Err(e) => panic!("{}", e),
+                    }
                 }
                 _ => unimplemented!("Errors for invalid host calls not implemented yet"),
             }

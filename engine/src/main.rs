@@ -79,10 +79,13 @@ async fn main() -> anyhow::Result<()> {
                     tokio::select! {
                         // If the core thread has requested data from the DB.
                         db_req = db_rx.recv() => {
+                            info!("Core thread has made a DB request.");
                             let (db_req, res_sender) = db_req.unwrap();
                             let mut db_client = db_client.lock().await;
                             let response: DbResponse = db_client.request(&db_req).await.unwrap();
+                            info!("DB request was made.");
                             res_sender.send(response).unwrap();
+                            info!("DB request sent to core thread.");
                         },
                         // If the core thread has returned a response:
                         response = inv_res_rx.recv() => {
