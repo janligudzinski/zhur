@@ -24,10 +24,10 @@ fn table_tree(owner: &str, table: &str, db: &Db) -> anyhow::Result<sled::Tree> {
     let tree = db.open_tree(table_tree_name(owner, table))?;
     Ok(tree)
 }
-fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
+fn process_request(req: DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
     match req {
         DbRequest::Del { owner, table, key } => {
-            let table_tree = table_tree(owner, table, db)?;
+            let table_tree = table_tree(&owner, &table, db)?;
             table_tree.remove(key)?;
             Ok(DbResponse::DeletedOk)
         }
@@ -36,7 +36,7 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
             table,
             prefix,
         } => {
-            let table_tree = table_tree(owner, table, db)?;
+            let table_tree = table_tree(&owner, &table, db)?;
             let prefix_iter = table_tree
                 .scan_prefix(prefix)
                 .filter_map(|r| r.ok())
@@ -56,7 +56,7 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
             Ok(DbResponse::DeletedManyOk(counter))
         }
         DbRequest::Get { owner, table, key } => {
-            let table_tree = table_tree(owner, table, db)?;
+            let table_tree = table_tree(&owner, &table, db)?;
             let value = table_tree.get(key).unwrap().map(|value| value.to_vec());
             Ok(DbResponse::Value(value))
         }
@@ -65,7 +65,7 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
             table,
             prefix,
         } => {
-            let table_tree = table_tree(owner, table, db)?;
+            let table_tree = table_tree(&owner, &table, db)?;
             let values = table_tree
                 .scan_prefix(prefix)
                 .filter_map(|r| r.ok())
@@ -73,6 +73,28 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
                 .collect::<Vec<_>>();
             Ok(DbResponse::ManyValues(values))
         }
-        _ => todo!(),
+        DbRequest::Set {
+            owner,
+            table,
+            key,
+            value,
+        } => {
+            let table_tree = table_tree(&owner, &table, db)?;
+            table_tree.insert(key, value).unwrap();
+            Ok(DbResponse::SetOk)
+        }
+        DbRequest::SetMany {
+            owner,
+            table,
+            pairs,
+        } => {
+            let table_tree = table_tree(&owner, &table, db)?;
+            let mut batch = sled::Batch::default();
+            for (key, value) in pairs.into_iter() {
+                batch.insert(key.as_str(), value);
+            }
+            table_tree.apply_batch(batch).unwrap();
+            Ok(DbResponse::SetManyOk)
+        }
     }
 }
