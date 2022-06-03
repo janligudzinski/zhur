@@ -12,12 +12,13 @@ const DB_FILE_PATH: &str = "/tmp/zhur-db.sled";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     simple_logger::init().unwrap();
+    // Open database.
     let db = sled::open(DB_FILE_PATH)?;
     let db = Arc::new(db);
 
     #[cfg(debug_assertions)] // only delete socket file in development use
     std::fs::remove_file(DB_SOCKET_PATH).unwrap();
-
+    // Start listening for requests.
     let listener = UnixListener::bind(DB_SOCKET_PATH)?;
     while let Ok((conn, _)) = listener.accept().await {
         let db = db.clone();
