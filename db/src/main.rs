@@ -43,7 +43,7 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
                 .map(|tuple| tuple.0)
                 .filter(|key| key.as_ref().starts_with(prefix.as_bytes()))
                 .collect::<Vec<_>>();
-            let counter = db
+            let counter = table_tree
                 .transaction::<_, _, ()>(|db| {
                     let mut counter = 0u64;
                     for key in &prefix_iter {
