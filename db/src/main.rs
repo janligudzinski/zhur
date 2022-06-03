@@ -55,6 +55,24 @@ fn process_request(req: &DbRequest, db: &Db) -> anyhow::Result<DbResponse> {
                 .unwrap();
             Ok(DbResponse::DeletedManyOk(counter))
         }
+        DbRequest::Get { owner, table, key } => {
+            let table_tree = table_tree(owner, table, db)?;
+            let value = table_tree.get(key).unwrap().map(|value| value.to_vec());
+            Ok(DbResponse::Value(value))
+        }
+        DbRequest::GetPrefixed {
+            owner,
+            table,
+            prefix,
+        } => {
+            let table_tree = table_tree(owner, table, db)?;
+            let values = table_tree
+                .scan_prefix(prefix)
+                .filter_map(|r| r.ok())
+                .map(|(_key, val)| val.to_vec())
+                .collect::<Vec<_>>();
+            Ok(DbResponse::ManyValues(values))
+        }
         _ => todo!(),
     }
 }

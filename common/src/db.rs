@@ -44,7 +44,7 @@ pub enum DbRequest {
 /// Type used for database responses.
 #[derive(Deserialize, Serialize, Debug)]
 pub enum DbResponse {
-    Value(Vec<u8>),
+    Value(Option<Vec<u8>>),
     SetOk,
     DeletedOk,
     ManyValues(Vec<Vec<u8>>),
