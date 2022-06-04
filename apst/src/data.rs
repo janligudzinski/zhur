@@ -1,4 +1,7 @@
-use common::apst::{AppStoreRequest, AppStoreResponse};
+use common::{
+    apst::{AppStoreRequest, AppStoreResponse, ApplicationData},
+    prelude::bincode::deserialize,
+};
 use sled::Db;
 pub struct AppStore {
     db: Db,
@@ -11,9 +14,22 @@ impl AppStore {
             updated_apps: vec![],
         }
     }
-    pub fn handle_request(req: AppStoreRequest) -> AppStoreResponse {
+    pub fn app_exists(&self, owner: &str, app_name: &str) -> bool {
+        let tree = self.db.open_tree(owner).unwrap();
+        let app_data = self.db.get(app_name).unwrap();
+        match app_data {
+            None => false,
+            Some(bytes) => {
+                let data: ApplicationData = deserialize(&bytes).unwrap();
+                data.enabled
+            }
+        }
+    }
+    pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
-            AppStoreRequest::AppExists { owner, app_name } => todo!(),
+            AppStoreRequest::AppExists { owner, app_name } => {
+                AppStoreResponse::AppExistence(self.app_exists(&owner, &app_name))
+            }
             AppStoreRequest::UpsertApp {
                 owner,
                 app_name,
