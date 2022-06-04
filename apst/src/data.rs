@@ -12,7 +12,7 @@ impl AppStore {
     }
     fn clear_updates(&self) {
         let tree = self.db.open_tree("updates").unwrap();
-        tree.clear();
+        tree.clear().unwrap();
     }
     fn get_updates(&self) -> Vec<(String, String)> {
         let tree = self.db.open_tree("updates").unwrap();
