@@ -94,6 +94,18 @@ impl AppStore {
         tree.remove(old_name.to_string() + "_code").unwrap();
         true
     }
+    fn get_owned_apps(&self, owner: &str) -> Vec<ApplicationData> {
+        let tree = self.db.open_tree(owner).unwrap();
+        tree.iter()
+            .filter_map(|x| x.ok())
+            .map(|(k, v)| {
+                let k = deserialize::<String>(&k).unwrap();
+                (k, v)
+            })
+            .filter(|(k, _v)| !k.ends_with("_code"))
+            .map(|(_k, v)| deserialize::<ApplicationData>(&v).unwrap())
+            .collect()
+    }
     fn get_app_code(&self, owner: &str, app_name: &str) -> Option<Vec<u8>> {
         let tree = self.db.open_tree(owner).unwrap();
         tree.get(app_name.to_string() + "_code")
@@ -138,7 +150,10 @@ impl AppStore {
                 let code = self.get_app_code(&owner, &app_name).unwrap();
                 AppStoreResponse::Code { code }
             }
-            AppStoreRequest::GetOwnedApps { owner } => todo!(),
+            AppStoreRequest::GetOwnedApps { owner } => {
+                let apps = self.get_owned_apps(&owner);
+                AppStoreResponse::Apps { apps }
+            }
             AppStoreRequest::RequestUpdates => {
                 let apps = self.get_updates();
                 self.clear_updates();
