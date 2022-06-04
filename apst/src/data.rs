@@ -14,7 +14,7 @@ impl AppStore {
             updated_apps: vec![],
         }
     }
-    pub fn app_exists(&self, owner: &str, app_name: &str) -> bool {
+    fn app_exists(&self, owner: &str, app_name: &str) -> bool {
         let tree = self.db.open_tree(owner).unwrap();
         let app_data = self.db.get(app_name).unwrap();
         match app_data {
