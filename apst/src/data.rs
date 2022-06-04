@@ -5,14 +5,10 @@ use common::{
 use sled::Db;
 pub struct AppStore {
     db: Db,
-    updated_apps: Vec<(String, String)>,
 }
 impl AppStore {
     pub fn new(db: Db) -> Self {
-        Self {
-            db,
-            updated_apps: vec![],
-        }
+        Self { db }
     }
     fn app_exists(&self, owner: &str, app_name: &str) -> (bool, bool) {
         let tree = self.db.open_tree(owner).unwrap();
