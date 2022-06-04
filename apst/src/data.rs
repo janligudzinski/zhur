@@ -53,6 +53,12 @@ impl AppStore {
             .unwrap();
         tree.insert(app_name.to_string() + "_code", code).unwrap();
     }
+    fn remove_app(&self, owner: &str, app_name: &str) {
+        let tree = self.db.open_tree(owner).unwrap();
+        let code_key = app_name.to_string() + "_code";
+        tree.remove(app_name).unwrap();
+        tree.remove(code_key).unwrap();
+    }
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
@@ -67,7 +73,10 @@ impl AppStore {
                 self.register_update(&owner, &app_name);
                 AppStoreResponse::AppUpserted
             }
-            AppStoreRequest::RemoveApp { owner, app_name } => todo!(),
+            AppStoreRequest::RemoveApp { owner, app_name } => {
+                self.remove_app(&owner, &app_name);
+                AppStoreResponse::AppRemoved
+            }
             AppStoreRequest::DisableApp { owner, app_name } => todo!(),
             AppStoreRequest::EnableApp { owner, app_name } => todo!(),
             AppStoreRequest::RenameApp {
