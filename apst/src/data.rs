@@ -60,6 +60,7 @@ impl AppStore {
                 code,
             } => {
                 self.upsert_app(&owner, &app_name, code);
+                self.register_update(&owner, &app_name);
                 AppStoreResponse::AppUpserted
             }
             AppStoreRequest::RemoveApp { owner, app_name } => todo!(),
