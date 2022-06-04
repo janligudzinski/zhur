@@ -46,5 +46,5 @@ pub enum AppStoreResponse {
     AppDisabled,
     AppEnabled,
     Code { code: Vec<u8> },
-    AppsChanged { apps: Vec<ApplicationData> },
+    AppsChanged { apps: Vec<(String, String)> },
 }

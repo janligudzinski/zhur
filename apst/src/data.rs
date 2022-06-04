@@ -10,6 +10,10 @@ impl AppStore {
     pub fn new(db: Db) -> Self {
         Self { db }
     }
+    fn clear_updates(&self) {
+        let tree = self.db.open_tree("updates").unwrap();
+        tree.clear();
+    }
     fn get_updates(&self) -> Vec<(String, String)> {
         let tree = self.db.open_tree("updates").unwrap();
         let mut vals = vec![];
@@ -73,7 +77,11 @@ impl AppStore {
             } => todo!(),
             AppStoreRequest::GetAppCode { owner, app_name } => todo!(),
             AppStoreRequest::GetOwnedApps { owner } => todo!(),
-            AppStoreRequest::RequestUpdates => todo!(),
+            AppStoreRequest::RequestUpdates => {
+                let apps = self.get_updates();
+                self.clear_updates();
+                AppStoreResponse::AppsChanged { apps }
+            }
         }
     }
 }
