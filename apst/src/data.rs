@@ -71,6 +71,29 @@ impl AppStore {
             }
         }
     }
+    fn rename_app(&self, owner: &str, old_name: &str, new_name: &str) -> bool {
+        if self.app_exists(owner, new_name).0 {
+            return false;
+        }
+        let tree = self.db.open_tree(owner).unwrap();
+        let mut old_app: ApplicationData = tree
+            .get(old_name)
+            .unwrap()
+            .map(|bytes| deserialize(&bytes).unwrap())
+            .unwrap();
+        old_app.app_name = new_name.to_string();
+        let old_app_code: Vec<u8> = tree
+            .get(old_name.to_string() + "_code")
+            .unwrap()
+            .unwrap()
+            .to_vec();
+        tree.insert(new_name, serialize(&old_app).unwrap()).unwrap();
+        tree.insert(new_name.to_string() + "_code", old_app_code)
+            .unwrap();
+        tree.remove(old_name).unwrap();
+        tree.remove(old_name.to_string() + "_code").unwrap();
+        true
+    }
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
@@ -101,7 +124,10 @@ impl AppStore {
                 owner,
                 old_name,
                 new_name,
-            } => todo!(),
+            } => {
+                let success = self.rename_app(&owner, &old_name, &new_name);
+                AppStoreResponse::AppRenamed(success)
+            }
             AppStoreRequest::GetAppCode { owner, app_name } => todo!(),
             AppStoreRequest::GetOwnedApps { owner } => todo!(),
             AppStoreRequest::RequestUpdates => {
