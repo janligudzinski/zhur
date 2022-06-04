@@ -4,9 +4,11 @@ use common::prelude::tokio::net::UnixListener;
 use common::prelude::*;
 use ipc::UnixServer;
 use log::*;
-use sled::Db;
 const STORE_SOCKET_PATH: &str = "/tmp/zhur-apst.sck";
 const STORE_DB_PATH: &str = "/tmp/zhur-apst.sled";
+
+mod data;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     info!("Starting app store server.");
