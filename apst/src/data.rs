@@ -94,6 +94,12 @@ impl AppStore {
         tree.remove(old_name.to_string() + "_code").unwrap();
         true
     }
+    fn get_app_code(&self, owner: &str, app_name: &str) -> Option<Vec<u8>> {
+        let tree = self.db.open_tree(owner).unwrap();
+        tree.get(app_name.to_string() + "_code")
+            .unwrap()
+            .map(|i| i.to_vec())
+    }
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
@@ -128,7 +134,10 @@ impl AppStore {
                 let success = self.rename_app(&owner, &old_name, &new_name);
                 AppStoreResponse::AppRenamed(success)
             }
-            AppStoreRequest::GetAppCode { owner, app_name } => todo!(),
+            AppStoreRequest::GetAppCode { owner, app_name } => {
+                let code = self.get_app_code(&owner, &app_name).unwrap();
+                AppStoreResponse::Code { code }
+            }
             AppStoreRequest::GetOwnedApps { owner } => todo!(),
             AppStoreRequest::RequestUpdates => {
                 let apps = self.get_updates();
