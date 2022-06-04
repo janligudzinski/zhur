@@ -59,6 +59,18 @@ impl AppStore {
         tree.remove(app_name).unwrap();
         tree.remove(code_key).unwrap();
     }
+    fn set_app_state(&self, owner: &str, app_name: &str, enabled: bool) {
+        let tree = self.db.open_tree(owner).unwrap();
+        let app_data = tree.get(app_name).unwrap();
+        match app_data {
+            None => panic!("Tried to disable or enable a nonexistent app!"),
+            Some(bytes) => {
+                let mut data: ApplicationData = deserialize(&bytes).unwrap();
+                data.enabled = enabled;
+                tree.insert(app_name, serialize(&data).unwrap()).unwrap();
+            }
+        }
+    }
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
@@ -77,8 +89,14 @@ impl AppStore {
                 self.remove_app(&owner, &app_name);
                 AppStoreResponse::AppRemoved
             }
-            AppStoreRequest::DisableApp { owner, app_name } => todo!(),
-            AppStoreRequest::EnableApp { owner, app_name } => todo!(),
+            AppStoreRequest::DisableApp { owner, app_name } => {
+                self.set_app_state(&owner, &app_name, false);
+                AppStoreResponse::AppDisabled
+            }
+            AppStoreRequest::EnableApp { owner, app_name } => {
+                self.set_app_state(&owner, &app_name, true);
+                AppStoreResponse::AppEnabled
+            }
             AppStoreRequest::RenameApp {
                 owner,
                 old_name,
