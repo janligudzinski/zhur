@@ -1,6 +1,6 @@
 use common::{
     apst::{AppStoreRequest, AppStoreResponse, ApplicationData},
-    prelude::bincode::deserialize,
+    prelude::bincode::{deserialize, serialize},
 };
 use sled::Db;
 pub struct AppStore {
@@ -25,17 +25,30 @@ impl AppStore {
             }
         }
     }
-
+    fn upsert_app(&self, owner: &str, app_name: &str, code: Vec<u8>) {
+        let tree = self.db.open_tree(owner).unwrap();
+        let app_data = ApplicationData {
+            owner: owner.to_string(),
+            app_name: app_name.to_string(),
+            enabled: self.app_exists(owner, app_name).1,
+        };
+        tree.insert(app_name, serialize(&app_data).unwrap())
+            .unwrap();
+        tree.insert(app_name.to_string() + "_code", code).unwrap();
+    }
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
-                AppStoreResponse::AppExistence(self.app_exists(&owner, &app_name))
+                AppStoreResponse::AppExistence(self.app_exists(&owner, &app_name).1)
             }
             AppStoreRequest::UpsertApp {
                 owner,
                 app_name,
                 code,
-            } => todo!(),
+            } => {
+                self.upsert_app(&owner, &app_name, code);
+                AppStoreResponse::AppUpserted
+            }
             AppStoreRequest::RemoveApp { owner, app_name } => todo!(),
             AppStoreRequest::DisableApp { owner, app_name } => todo!(),
             AppStoreRequest::EnableApp { owner, app_name } => todo!(),
