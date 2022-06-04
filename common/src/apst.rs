@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub enum AppStoreRequest {
+    /// Check if an app exists / can be launched.
+    AppExists { owner: String, app_name: String },
     /// Add or update an app.
     UpsertApp {
         owner: String,
