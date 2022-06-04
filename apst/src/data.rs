@@ -14,17 +14,18 @@ impl AppStore {
             updated_apps: vec![],
         }
     }
-    fn app_exists(&self, owner: &str, app_name: &str) -> bool {
+    fn app_exists(&self, owner: &str, app_name: &str) -> (bool, bool) {
         let tree = self.db.open_tree(owner).unwrap();
         let app_data = self.db.get(app_name).unwrap();
         match app_data {
-            None => false,
+            None => (false, false),
             Some(bytes) => {
                 let data: ApplicationData = deserialize(&bytes).unwrap();
-                data.enabled
+                (true, data.enabled)
             }
         }
     }
+
     pub fn handle_request(&self, req: AppStoreRequest) -> AppStoreResponse {
         match req {
             AppStoreRequest::AppExists { owner, app_name } => {
