@@ -1,8 +1,14 @@
 use super::data::*;
-use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+use async_trait::async_trait;
+use axum::{
+    extract::{FromRequest, RequestParts},
+    http::StatusCode,
+    response::IntoResponse,
+    Extension, Json,
+};
 use common::prelude::*;
 use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
+use jwt::{SignWithKey, VerifyWithKey};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::sync::Arc;
@@ -17,6 +23,19 @@ pub struct RegisterRequest {
 #[derive(Deserialize, Serialize)]
 pub struct LoginClaims {
     pub sub: String,
+}
+
+fn try_jwt_from_request<B>(parts: &mut RequestParts<B>) -> Option<LoginClaims> {
+    parts
+        .headers()
+        .get("Authorization")
+        .map(|val| val.to_str().ok())
+        .flatten()
+        .map(|token| {
+            let key = Hmac::<Sha256>::new_from_slice(HMAC_KEY).unwrap();
+            let claims: LoginClaims = token.verify_with_key(&key).unwrap();
+            claims
+        })
 }
 #[derive(Deserialize, Serialize)]
 pub struct LoginRequest {
