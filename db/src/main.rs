@@ -14,7 +14,10 @@ const DB_FILE_PATH: &str = "/tmp/zhur-db.sled";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    simple_logger::init().unwrap();
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()
+        .unwrap();
     // Open database.
     let db = sled::open(DB_FILE_PATH)?;
     let db = Arc::new(db);

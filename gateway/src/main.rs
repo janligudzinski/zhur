@@ -3,7 +3,10 @@ use std::{net::SocketAddr, str::FromStr};
 use common::{
     errors::InvocationError,
     invoke::{Invocation, InvocationContext, InvocationResponse, InvocationResult},
-    prelude::{log::*, tokio},
+    prelude::{
+        log::{self, *},
+        tokio,
+    },
 };
 use shared::http::*;
 
@@ -130,7 +133,10 @@ fn is_mimetype_binary(mimetype: &str) -> bool {
 
 #[tokio::main]
 async fn main() {
-    simple_logger::init().unwrap();
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()
+        .unwrap();
     let app = Router::new()
         .route("/text/:owner/:app/*raw_path", any(text_invoke_handler))
         .route("/:owner/:app/*raw_path", any(http_invoke_handler));

@@ -13,7 +13,10 @@ const USERS_DB_PATH: &str = "/tmp/zhur-users.sled";
 const STORE_SOCKET_PATH: &str = "/tmp/zhur-apst.sck";
 #[tokio::main]
 async fn main() {
-    simple_logger::init().ok();
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()
+        .unwrap();
     let db = sled::open(USERS_DB_PATH).unwrap();
     let app_repo = Arc::new(AppRepo::new(STORE_SOCKET_PATH));
     let user_repo = Arc::new(UserRepo::new(db));

@@ -26,7 +26,9 @@ struct Flags {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    simple_logger::init()?;
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()?;
     info!("Zhur engine started.");
     // Parse flags.
     let flags = Flags::parse();

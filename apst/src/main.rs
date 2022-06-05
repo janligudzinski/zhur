@@ -15,7 +15,10 @@ mod data;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    simple_logger::init().unwrap();
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()
+        .unwrap();
     info!("Starting app store server.");
     info!("Opening database...");
     let db = sled::open(STORE_DB_PATH)?;

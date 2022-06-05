@@ -17,7 +17,9 @@ struct Flags {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    simple_logger::init()?;
+    simple_logger::SimpleLogger::new()
+        .with_module_level("sled", log::LevelFilter::Warn)
+        .init()?;
     let flags = Flags::try_parse()?;
     let stream = tokio::net::UnixStream::connect("/tmp/zhur-engine.sck").await?;
     let mut client = UnixClient::new(1024 * 8, stream);
