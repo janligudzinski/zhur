@@ -13,6 +13,7 @@ async fn main() {
         .route("/register", post(user_routes::register))
         .route("/login", post(user_routes::login))
         .route("/whoami", post(user_routes::whoami))
+        .route("/change_password", post(user_routes::change_password))
         .layer(Extension(repo))
         .into_make_service();
 

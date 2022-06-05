@@ -25,6 +25,12 @@ pub struct LoginClaims {
     pub sub: String,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct ChangePasswordRequest {
+    pub old_password: String,
+    pub new_password: String,
+}
+
 fn try_jwt_from_request<B>(parts: &mut RequestParts<B>) -> Option<LoginClaims> {
     parts
         .headers()
@@ -89,4 +95,19 @@ pub async fn login(
 
 pub async fn whoami(claims: LoginClaims) -> impl IntoResponse {
     claims.sub
+}
+
+pub async fn change_password(
+    Extension(repo): Extension<Arc<UserRepo>>,
+    claims: LoginClaims,
+    Json(req): Json<ChangePasswordRequest>,
+) -> impl IntoResponse {
+    if repo.change_password(&claims.sub, &req.old_password, &req.new_password) {
+        Ok(Json("Password successfully changed"))
+    } else {
+        Err((
+            StatusCode::UNAUTHORIZED,
+            Json("The old password given did not check out"),
+        ))
+    }
 }
