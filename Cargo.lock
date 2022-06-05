@@ -965,6 +965,7 @@ dependencies = [
  "bcrypt",
  "common",
  "ipc",
+ "serde",
  "simple_logger",
  "sled",
 ]
