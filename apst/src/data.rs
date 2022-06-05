@@ -129,10 +129,12 @@ impl AppStore {
             }
             AppStoreRequest::RemoveApp { owner, app_name } => {
                 self.remove_app(&owner, &app_name);
+                self.register_update(&owner, &app_name);
                 AppStoreResponse::AppRemoved
             }
             AppStoreRequest::DisableApp { owner, app_name } => {
                 self.set_app_state(&owner, &app_name, false);
+                self.register_update(&owner, &app_name);
                 AppStoreResponse::AppDisabled
             }
             AppStoreRequest::EnableApp { owner, app_name } => {
