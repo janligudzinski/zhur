@@ -14,3 +14,6 @@ ipc = { path = "../ipc" }
 serde = { version = "1.0", features = ["derive"] }
 simple_logger = "2.1"
 sled = "0.34"
+hmac = "0.12.1"
+sha2 = "0.10.2"
+jwt = "0.16.0"
