@@ -32,6 +32,7 @@ fn try_jwt_from_request<B>(parts: &mut RequestParts<B>) -> Option<LoginClaims> {
         .map(|val| val.to_str().ok())
         .flatten()
         .map(|token| {
+            let token = token.split(" ").last().unwrap();
             let key = Hmac::<Sha256>::new_from_slice(HMAC_KEY).unwrap();
             let claims: LoginClaims = token.verify_with_key(&key).unwrap();
             claims
@@ -83,4 +84,8 @@ pub async fn login(
             Json("Invalid username/password combination."),
         ))
     }
+}
+
+pub async fn whoami(claims: LoginClaims) -> impl IntoResponse {
+    claims.sub
 }

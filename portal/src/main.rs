@@ -12,6 +12,7 @@ async fn main() {
     let router = axum::Router::new()
         .route("/register", post(user_routes::register))
         .route("/login", post(user_routes::login))
+        .route("/whoami", post(user_routes::whoami))
         .layer(Extension(repo))
         .into_make_service();
 
