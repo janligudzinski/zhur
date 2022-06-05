@@ -34,7 +34,7 @@ impl UnixServer {
                 continue;
             }
             trace!("Stream readable.");
-            match self.stream.try_read(&mut self.buf) {
+            match self.stream.try_read(&mut self.buf[len..]) {
                 Ok(0) => {
                     warn!("Read 0, client disconnected.");
                     return Err(IpcError::ClientDisconnected);

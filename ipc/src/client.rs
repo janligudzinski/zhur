@@ -63,7 +63,7 @@ impl UnixClient {
                 continue;
             }
             trace!("Stream readable.");
-            match self.stream.try_read(&mut self.buf) {
+            match self.stream.try_read(&mut self.buf[len..]) {
                 Ok(0) => {
                     error!("Server disconnected while client was reading response.");
                     return Err(IpcError::ServerDisconnected);
@@ -92,7 +92,10 @@ impl UnixClient {
             }
         }
         let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
-            Ok(r) => Ok(r),
+            Ok(r) => {
+                info!("Successfully read and deserialized a request.");
+                Ok(r)
+            }
             Err(e) => {
                 error!("Could not deserialize response.");
                 Err(IpcError::ResponseDeserialization(e.to_string()))
