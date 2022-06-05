@@ -112,8 +112,7 @@ pub async fn enable_app(
 }
 
 pub async fn rename_app(
-    Path(old_name): Path<String>,
-    Path(new_name): Path<String>,
+    Path((old_name, new_name)): Path<(String, String)>,
     Extension(repo): Extension<Arc<AppRepo>>,
     claim: LoginClaims,
 ) -> impl IntoResponse {
