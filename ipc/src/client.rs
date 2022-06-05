@@ -40,6 +40,7 @@ impl UnixClient {
         self.stream
             .write(&request_bytes.len().to_be_bytes())
             .await?;
+        info!("Notified other end of {}B request", &request_bytes.len());
         match self.stream.write_all(&request_bytes).await {
             Ok(()) => {
                 info!(
@@ -54,7 +55,6 @@ impl UnixClient {
         };
         let intended_len = self.stream.read_u64().await? as usize;
         info!("Response length is expected to be {}B", intended_len);
-        let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
             let ready = self.stream.ready(Interest::READABLE).await?;
@@ -68,14 +68,18 @@ impl UnixClient {
                     return Err(IpcError::ServerDisconnected);
                 }
                 Ok(l) => {
-                    trace!("Received response chunk of length {}B", l);
-                    len += l;
+                    trace!(
+                        "Received response chunk of length {}B - {}B / {}B",
+                        l,
+                        self.buf.len(),
+                        intended_len
+                    );
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    if len < intended_len {
+                    if self.buf.len() < intended_len {
                         continue;
                     } else {
-                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                        trace!("Reading response would block, assuming finished. Total response length {}B", self.buf.len());
                         break;
                     }
                 }
@@ -85,7 +89,7 @@ impl UnixClient {
                 }
             }
         }
-        let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
+        let result = match bincode::deserialize::<Res>(&self.buf[0..self.buf.len()]) {
             Ok(r) => Ok(r),
             Err(_) => {
                 error!("Could not deserialize response.");

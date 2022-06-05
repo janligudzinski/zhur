@@ -26,7 +26,6 @@ impl UnixServer {
         self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
         let intended_len = self.stream.read_u64().await? as usize;
         info!("Intended request length is {}B", intended_len);
-        let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
             let ready = self.stream.ready(Interest::READABLE).await?;
@@ -40,14 +39,18 @@ impl UnixServer {
                     return Err(IpcError::ClientDisconnected);
                 }
                 Ok(l) => {
-                    trace!("Read request chunk of length {}B", l);
-                    len += l
+                    trace!(
+                        "Read request chunk of length {}B - {}B / {}B",
+                        l,
+                        self.buf.len(),
+                        intended_len
+                    );
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    if len < intended_len {
+                    if self.buf.len() < intended_len {
                         continue;
                     } else {
-                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                        trace!("Reading response would block, assuming finished. Total response length {}B", self.buf.len());
                         break;
                     }
                 }
@@ -57,7 +60,7 @@ impl UnixServer {
                 }
             }
         }
-        let result = match bincode::deserialize::<Req>(&self.buf[0..len]) {
+        let result = match bincode::deserialize::<Req>(&self.buf[0..self.buf.len()]) {
             Ok(r) => Ok(r),
             Err(_) => {
                 error!("Could not deserialize request type.");
@@ -80,6 +83,7 @@ impl UnixServer {
         self.stream
             .write(&response_bytes.len().to_be_bytes())
             .await?;
+        info!("Notified other end of {}B response.", response_bytes.len());
         match self.stream.write_all(&response_bytes).await {
             Ok(_) => {
                 trace!("Wrote a response.");
