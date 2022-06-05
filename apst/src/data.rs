@@ -44,10 +44,11 @@ impl AppStore {
     }
     fn upsert_app(&self, owner: &str, app_name: &str, code: Vec<u8>) {
         let tree = self.db.open_tree(owner).unwrap();
+        let (exists, enabled) = self.app_exists(owner, app_name);
         let app_data = ApplicationData {
             owner: owner.to_string(),
             app_name: app_name.to_string(),
-            enabled: self.app_exists(owner, app_name).1,
+            enabled: if !exists { true } else { enabled },
         };
         tree.insert(app_name, serialize(&app_data).unwrap())
             .unwrap();
@@ -99,7 +100,7 @@ impl AppStore {
         tree.iter()
             .filter_map(|x| x.ok())
             .map(|(k, v)| {
-                let k = deserialize::<String>(&k).unwrap();
+                let k = std::str::from_utf8(&k).unwrap().to_string();
                 (k, v)
             })
             .filter(|(k, _v)| !k.ends_with("_code"))
