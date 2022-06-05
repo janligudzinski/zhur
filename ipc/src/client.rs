@@ -1,7 +1,7 @@
 use log::*;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::{
-    io::{AsyncWriteExt, Interest},
+    io::{AsyncReadExt, AsyncWriteExt, Interest},
     net::UnixStream,
 };
 
@@ -52,6 +52,8 @@ impl UnixClient {
                 return Err(e.into());
             }
         };
+        let intended_len = self.stream.read_u64().await? as usize;
+        info!("Response length is expected to be {}B", intended_len);
         let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
@@ -70,8 +72,12 @@ impl UnixClient {
                     len += l;
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    trace!("Reading response would block, assuming finished. Total response length {}B", len);
-                    break;
+                    if len < intended_len {
+                        continue;
+                    } else {
+                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                        break;
+                    }
                 }
                 Err(e) => {
                     error!("IO error while reading response: {}", e);

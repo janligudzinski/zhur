@@ -77,6 +77,9 @@ impl UnixServer {
                 return Err(IpcError::ResponseSerialization);
             }
         };
+        self.stream
+            .write(&response_bytes.len().to_be_bytes())
+            .await?;
         match self.stream.write_all(&response_bytes).await {
             Ok(_) => {
                 trace!("Wrote a response.");
