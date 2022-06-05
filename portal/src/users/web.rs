@@ -34,9 +34,10 @@ fn try_jwt_from_request<B>(parts: &mut RequestParts<B>) -> Option<LoginClaims> {
         .map(|token| {
             let token = token.split(" ").last().unwrap();
             let key = Hmac::<Sha256>::new_from_slice(HMAC_KEY).unwrap();
-            let claims: LoginClaims = token.verify_with_key(&key).unwrap();
+            let claims: Option<LoginClaims> = token.verify_with_key(&key).ok();
             claims
         })
+        .flatten()
 }
 #[async_trait]
 impl<B> FromRequest<B> for LoginClaims
