@@ -15,15 +15,20 @@ mod data;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    simple_logger::init().unwrap();
     info!("Starting app store server.");
     info!("Opening database...");
     let db = sled::open(STORE_DB_PATH)?;
     let app_store = Arc::new(AppStore::new(db));
+
+    #[cfg(debug_assertions)]
+    std::fs::remove_file(STORE_SOCKET_PATH).ok();
+
     let listener = UnixListener::bind(STORE_SOCKET_PATH)?;
     while let Ok((stream, _)) = listener.accept().await {
         let app_store = app_store.clone();
         tokio::spawn(async move {
-            let mut server = UnixServer::new(1024 * 1024 * 20, stream);
+            let mut server = UnixServer::new(1024 * 1024 * 40, stream);
             loop {
                 let req: AppStoreRequest = match server.get_request().await {
                     Ok(r) => r,

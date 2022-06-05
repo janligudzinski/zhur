@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, str::FromStr, sync::Arc};
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Extension,
 };
 use common::prelude::*;
@@ -23,6 +23,7 @@ async fn main() {
         .route("/change_password", post(user_routes::change_password))
         .layer(Extension(user_repo))
         .route("/apps", get(app_routes::get_owned_apps))
+        .route("/apps/:app_name", put(app_routes::upsert_app))
         .layer(Extension(app_repo))
         .into_make_service();
 

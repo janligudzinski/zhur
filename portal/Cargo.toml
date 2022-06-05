@@ -9,7 +9,7 @@ edition = "2021"
 anyhow = "1.0"
 async-trait = "0.1"
 bcrypt = "0.13"
-axum = "0.5"
+axum = { version = "0.5", features = ["multipart"] }
 common = { path = "../common" }
 ipc = { path = "../ipc" }
 serde = { version = "1.0", features = ["derive"] }

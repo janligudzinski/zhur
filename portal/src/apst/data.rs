@@ -10,7 +10,7 @@ impl AppRepo {
 
     pub async fn get_connection(&self) -> UnixClient {
         let stream = UnixStream::connect(&self.path).await.unwrap();
-        let client = UnixClient::new(1024 * 1024 * 20, stream);
+        let client = UnixClient::new(1024 * 1024 * 30, stream);
         client
     }
 }
