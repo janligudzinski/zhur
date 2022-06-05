@@ -43,7 +43,7 @@ impl UnixServer {
                     trace!(
                         "Read request chunk of length {}B - {}B / {}B",
                         l,
-                        len,
+                        len + l,
                         intended_len
                     );
                     len += l;
@@ -52,7 +52,7 @@ impl UnixServer {
                     if len < intended_len {
                         continue;
                     } else {
-                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                        trace!("Reading request would block, assuming finished. Total response length {}B", len);
                         break;
                     }
                 }
@@ -64,9 +64,9 @@ impl UnixServer {
         }
         let result = match bincode::deserialize::<Req>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
-            Err(_) => {
+            Err(e) => {
                 error!("Could not deserialize request type.");
-                Err(IpcError::RequestDeserialization)
+                Err(IpcError::RequestDeserialization(e.to_string()))
             }
         };
         result

@@ -7,12 +7,12 @@ pub enum IpcError {
     ClientDisconnected,
     #[error("Data could not be read from or written to the client or server.")]
     Connection(#[from] std::io::Error),
-    #[error("The request could not be deserialized.")]
-    RequestDeserialization,
+    #[error("The request could not be deserialized: {0}.")]
+    RequestDeserialization(String),
     #[error("The request could not be serialized.")]
     RequestSerialization,
-    #[error("The response could not be deserialized.")]
-    ResponseDeserialization,
+    #[error("The response could not be deserialized: {0}.")]
+    ResponseDeserialization(String),
     #[error("The response could not be serialized.")]
     ResponseSerialization,
     #[error("The server disconnected.")]

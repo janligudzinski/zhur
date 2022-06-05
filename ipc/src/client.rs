@@ -72,7 +72,7 @@ impl UnixClient {
                     trace!(
                         "Received response chunk of length {}B - {}B / {}B",
                         l,
-                        len,
+                        len + l,
                         intended_len
                     );
                     len += l;
@@ -93,9 +93,9 @@ impl UnixClient {
         }
         let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
-            Err(_) => {
+            Err(e) => {
                 error!("Could not deserialize response.");
-                Err(IpcError::ResponseDeserialization)
+                Err(IpcError::ResponseDeserialization(e.to_string()))
             }
         };
         result
