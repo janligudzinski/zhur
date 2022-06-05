@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ApplicationData {
     pub owner: String,
     pub app_name: String,
@@ -37,7 +37,7 @@ pub enum AppStoreRequest {
     RequestUpdates,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum AppStoreResponse {
     AppExistence(bool),
     AppUpserted,
