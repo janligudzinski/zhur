@@ -1,7 +1,7 @@
 use log::*;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
+    io::{AsyncReadExt, AsyncWriteExt, Interest},
     net::UnixStream,
 };
 
@@ -24,23 +24,33 @@ impl UnixServer {
     pub async fn get_request<Req: DeserializeOwned>(&mut self) -> Result<Req, IpcError> {
         trace!("Clearing request read buffer.");
         self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
-        trace!("Awaiting readable stream...");
-        self.stream.readable().await?;
-        trace!("Stream readable.");
-        let len = match self.stream.read(&mut self.buf).await {
-            Ok(0) => {
-                warn!("Read 0, client disconnected.");
-                return Err(IpcError::ClientDisconnected);
+        let mut len = 0usize;
+        loop {
+            trace!("Awaiting readable stream to be ready...");
+            let ready = self.stream.ready(Interest::READABLE).await?;
+            if !ready.is_readable() {
+                continue;
             }
-            Ok(l) => {
-                trace!("Read request of length {}B", l);
-                l
+            trace!("Stream readable.");
+            match self.stream.try_read(&mut self.buf) {
+                Ok(0) => {
+                    warn!("Read 0, client disconnected.");
+                    return Err(IpcError::ClientDisconnected);
+                }
+                Ok(l) => {
+                    trace!("Read request chunk of length {}B", l);
+                    len += l
+                }
+                Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
+                    trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                    break;
+                }
+                Err(e) => {
+                    error!("IO error while reading request: {}", e);
+                    return Err(e.into());
+                }
             }
-            Err(e) => {
-                error!("IO error while reading request: {}", e);
-                return Err(e.into());
-            }
-        };
+        }
         let result = match bincode::deserialize::<Req>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
             Err(_) => {
@@ -104,34 +114,45 @@ impl UnixClient {
                 return Err(IpcError::RequestSerialization);
             }
         };
-        match self.stream.write(&request_bytes).await {
-            Ok(0) => {
-                error!("Server disconnected while writing response.");
-                return Err(IpcError::ServerDisconnected);
+        match self.stream.write_all(&request_bytes).await {
+            Ok(()) => {
+                info!(
+                    "Wrote request of size {}B successfully.",
+                    request_bytes.len()
+                );
             }
-            Ok(_) => (),
             Err(e) => {
                 error!("IO error while writing request: {}", e);
                 return Err(e.into());
             }
         };
-        trace!("Awaiting readable stream...");
-        self.stream.readable().await?;
-        trace!("Stream readable.");
-        let len = match self.stream.read(&mut self.buf).await {
-            Ok(0) => {
-                error!("Server disconnected while reading response.");
-                return Err(IpcError::ServerDisconnected);
+        let mut len = 0usize;
+        loop {
+            trace!("Awaiting readable stream to be ready...");
+            let ready = self.stream.ready(Interest::READABLE).await?;
+            if !ready.is_readable() {
+                continue;
             }
-            Ok(l) => {
-                trace!("Received response of length {}B", l);
-                l
+            trace!("Stream readable.");
+            match self.stream.try_read(&mut self.buf) {
+                Ok(0) => {
+                    error!("Server disconnected while client was reading response.");
+                    return Err(IpcError::ServerDisconnected);
+                }
+                Ok(l) => {
+                    trace!("Received response chunk of length {}B", l);
+                    len += l;
+                }
+                Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
+                    trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                    break;
+                }
+                Err(e) => {
+                    error!("IO error while reading response: {}", e);
+                    return Err(e.into());
+                }
             }
-            Err(e) => {
-                error!("IO error while reading response: {}", e);
-                return Err(e.into());
-            }
-        };
+        }
         let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
             Err(_) => {
