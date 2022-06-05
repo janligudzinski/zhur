@@ -90,7 +90,7 @@ pub async fn disable_app(
         app_name,
     };
     match client.request(&req).await.unwrap() {
-        AppStoreResponse::AppRemoved => (StatusCode::OK, "App disabled"),
+        AppStoreResponse::AppDisabled => (StatusCode::OK, "App disabled"),
         e => panic!("Got a response other than AppDisabled: {:?}", e),
     }
 }
@@ -124,7 +124,16 @@ pub async fn rename_app(
         new_name,
     };
     match client.request(&req).await.unwrap() {
-        AppStoreResponse::AppRemoved => (StatusCode::OK, "App renamed"),
+        AppStoreResponse::AppRenamed(renamed) => {
+            if renamed {
+                (StatusCode::OK, "App renamed")
+            } else {
+                (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "The new name is already taken.",
+                )
+            }
+        }
         e => panic!("Got a response other than AppRenamed: {:?}", e),
     }
 }

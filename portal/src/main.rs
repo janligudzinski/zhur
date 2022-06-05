@@ -15,6 +15,8 @@ const STORE_SOCKET_PATH: &str = "/tmp/zhur-apst.sck";
 async fn main() {
     simple_logger::SimpleLogger::new()
         .with_module_level("sled", log::LevelFilter::Warn)
+        .with_module_level("hyper", log::LevelFilter::Warn)
+        .with_module_level("mio", log::LevelFilter::Warn)
         .init()
         .unwrap();
     let db = sled::open(USERS_DB_PATH).unwrap();
@@ -28,11 +30,11 @@ async fn main() {
         .layer(Extension(user_repo))
         .route("/apps", get(app_routes::get_owned_apps))
         .route("/apps/:app_name", put(app_routes::upsert_app))
-        .route("/apps/:app_name/disable", post(app_routes::disable_app))
-        .route("/apps/:app_name/enable", post(app_routes::enable_app))
-        .route("/apps/:app_name/remove", delete(app_routes::remove_app))
+        .route("/apps/disable/:app_name", post(app_routes::disable_app))
+        .route("/apps/enable/:app_name", post(app_routes::enable_app))
+        .route("/apps/remove/:app_name", delete(app_routes::remove_app))
         .route(
-            "/apps/:old_name/rename/:new_name",
+            "/apps/rename/:old_name/:new_name",
             patch(app_routes::rename_app),
         )
         .layer(Extension(app_repo))
