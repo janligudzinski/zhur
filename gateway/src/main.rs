@@ -135,6 +135,8 @@ fn is_mimetype_binary(mimetype: &str) -> bool {
 async fn main() {
     simple_logger::SimpleLogger::new()
         .with_module_level("sled", log::LevelFilter::Warn)
+        .with_module_level("hyper", log::LevelFilter::Warn)
+        .with_module_level("mio", log::LevelFilter::Warn)
         .init()
         .unwrap();
     let app = Router::new()
