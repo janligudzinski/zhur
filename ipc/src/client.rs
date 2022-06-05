@@ -37,6 +37,9 @@ impl UnixClient {
                 return Err(IpcError::RequestSerialization);
             }
         };
+        self.stream
+            .write(&request_bytes.len().to_be_bytes())
+            .await?;
         match self.stream.write_all(&request_bytes).await {
             Ok(()) => {
                 info!(

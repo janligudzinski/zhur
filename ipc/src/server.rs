@@ -1,7 +1,7 @@
 use log::*;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::{
-    io::{AsyncWriteExt, Interest},
+    io::{AsyncReadExt, AsyncWriteExt, Interest},
     net::UnixStream,
 };
 
@@ -24,6 +24,8 @@ impl UnixServer {
     pub async fn get_request<Req: DeserializeOwned>(&mut self) -> Result<Req, IpcError> {
         trace!("Clearing request read buffer.");
         self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
+        let intended_len = self.stream.read_u64().await? as usize;
+        info!("Intended request length is {}B", intended_len);
         let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
@@ -42,8 +44,12 @@ impl UnixServer {
                     len += l
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    trace!("Reading response would block, assuming finished. Total response length {}B", len);
-                    break;
+                    if len < intended_len {
+                        continue;
+                    } else {
+                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
+                        break;
+                    }
                 }
                 Err(e) => {
                     error!("IO error while reading request: {}", e);
