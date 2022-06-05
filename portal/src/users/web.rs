@@ -37,6 +37,17 @@ fn try_jwt_from_request<B>(parts: &mut RequestParts<B>) -> Option<LoginClaims> {
             claims
         })
 }
+#[async_trait]
+impl<B> FromRequest<B> for LoginClaims
+where
+    B: Send, // required by `async_trait`
+{
+    type Rejection = StatusCode;
+
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        try_jwt_from_request(req).ok_or(StatusCode::UNAUTHORIZED)
+    }
+}
 #[derive(Deserialize, Serialize)]
 pub struct LoginRequest {
     pub name: String,
