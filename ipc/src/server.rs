@@ -26,6 +26,7 @@ impl UnixServer {
         self.buf.fill(0); // clear() sets the length to 0. This results in false positives for disconnection detection.
         let intended_len = self.stream.read_u64().await? as usize;
         info!("Intended request length is {}B", intended_len);
+        let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
             let ready = self.stream.ready(Interest::READABLE).await?;
@@ -42,15 +43,16 @@ impl UnixServer {
                     trace!(
                         "Read request chunk of length {}B - {}B / {}B",
                         l,
-                        self.buf.len(),
+                        len,
                         intended_len
                     );
+                    len += l;
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    if self.buf.len() < intended_len {
+                    if len < intended_len {
                         continue;
                     } else {
-                        trace!("Reading response would block, assuming finished. Total response length {}B", self.buf.len());
+                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
                         break;
                     }
                 }
@@ -60,7 +62,7 @@ impl UnixServer {
                 }
             }
         }
-        let result = match bincode::deserialize::<Req>(&self.buf[0..self.buf.len()]) {
+        let result = match bincode::deserialize::<Req>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
             Err(_) => {
                 error!("Could not deserialize request type.");

@@ -55,6 +55,7 @@ impl UnixClient {
         };
         let intended_len = self.stream.read_u64().await? as usize;
         info!("Response length is expected to be {}B", intended_len);
+        let mut len = 0usize;
         loop {
             trace!("Awaiting readable stream to be ready...");
             let ready = self.stream.ready(Interest::READABLE).await?;
@@ -71,15 +72,16 @@ impl UnixClient {
                     trace!(
                         "Received response chunk of length {}B - {}B / {}B",
                         l,
-                        self.buf.len(),
+                        len,
                         intended_len
                     );
+                    len += l;
                 }
                 Err(ref e) if e.kind() == tokio::io::ErrorKind::WouldBlock => {
-                    if self.buf.len() < intended_len {
+                    if len < intended_len {
                         continue;
                     } else {
-                        trace!("Reading response would block, assuming finished. Total response length {}B", self.buf.len());
+                        trace!("Reading response would block, assuming finished. Total response length {}B", len);
                         break;
                     }
                 }
@@ -89,7 +91,7 @@ impl UnixClient {
                 }
             }
         }
-        let result = match bincode::deserialize::<Res>(&self.buf[0..self.buf.len()]) {
+        let result = match bincode::deserialize::<Res>(&self.buf[0..len]) {
             Ok(r) => Ok(r),
             Err(_) => {
                 error!("Could not deserialize response.");
