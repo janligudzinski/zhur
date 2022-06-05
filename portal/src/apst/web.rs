@@ -62,3 +62,69 @@ pub async fn upsert_app(
         ),
     }
 }
+
+pub async fn remove_app(
+    Path(app_name): Path<String>,
+    Extension(repo): Extension<Arc<AppRepo>>,
+    claim: LoginClaims,
+) -> impl IntoResponse {
+    let mut client = repo.get_connection().await;
+    let req = AppStoreRequest::RemoveApp {
+        owner: claim.sub,
+        app_name,
+    };
+    match client.request(&req).await.unwrap() {
+        AppStoreResponse::AppRemoved => (StatusCode::OK, "App removed"),
+        e => panic!("Got a response other than AppRemoved: {:?}", e),
+    }
+}
+
+pub async fn disable_app(
+    Path(app_name): Path<String>,
+    Extension(repo): Extension<Arc<AppRepo>>,
+    claim: LoginClaims,
+) -> impl IntoResponse {
+    let mut client = repo.get_connection().await;
+    let req = AppStoreRequest::DisableApp {
+        owner: claim.sub,
+        app_name,
+    };
+    match client.request(&req).await.unwrap() {
+        AppStoreResponse::AppRemoved => (StatusCode::OK, "App disabled"),
+        e => panic!("Got a response other than AppDisabled: {:?}", e),
+    }
+}
+
+pub async fn enable_app(
+    Path(app_name): Path<String>,
+    Extension(repo): Extension<Arc<AppRepo>>,
+    claim: LoginClaims,
+) -> impl IntoResponse {
+    let mut client = repo.get_connection().await;
+    let req = AppStoreRequest::EnableApp {
+        owner: claim.sub,
+        app_name,
+    };
+    match client.request(&req).await.unwrap() {
+        AppStoreResponse::AppEnabled => (StatusCode::OK, "App enabled"),
+        e => panic!("Got a response other than AppEnabled: {:?}", e),
+    }
+}
+
+pub async fn rename_app(
+    Path(old_name): Path<String>,
+    Path(new_name): Path<String>,
+    Extension(repo): Extension<Arc<AppRepo>>,
+    claim: LoginClaims,
+) -> impl IntoResponse {
+    let mut client = repo.get_connection().await;
+    let req = AppStoreRequest::RenameApp {
+        owner: claim.sub,
+        old_name,
+        new_name,
+    };
+    match client.request(&req).await.unwrap() {
+        AppStoreResponse::AppRemoved => (StatusCode::OK, "App renamed"),
+        e => panic!("Got a response other than AppRenamed: {:?}", e),
+    }
+}
