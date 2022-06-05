@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
             InvocationResponse::TextResponse { ctx: _, payload } => {
                 info!("Got text response from engine:\n{}", payload);
             }
-            InvocationResponse::HttpResponse { ctx: _, payload } => {
+            InvocationResponse::HttpResponse { ctx: _, payload: _ } => {
                 info!("Got HTTP response from engine.");
             }
         }

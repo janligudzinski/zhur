@@ -1,4 +1,3 @@
-use bcrypt::bcrypt;
 use sled::Db;
 const BCRYPT_COST: u32 = 10;
 pub struct UserRepo {

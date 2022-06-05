@@ -91,7 +91,7 @@ async fn http_invoke_handler(
                     Some(shared::http::HttpBody::Binary(bytes))
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 todo!()
             }
         },
