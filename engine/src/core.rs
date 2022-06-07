@@ -87,14 +87,14 @@ impl Core {
                         let response_bytes = serialize(&(&owner, &app_name)).unwrap();
                         Ok(response_bytes)
                     }
-                    _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+                    _ => panic!("Invalid host call"),
                 },
                 "datetime" => match op {
                     "now" => {
                         let naive_dt = chrono::Utc::now().naive_utc();
                         Ok(bincode::serialize(&naive_dt).unwrap())
                     }
-                    _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+                    _ => panic!("Invalid host call"),
                 },
                 "db" => {
                     let response = Self::process_db_request(owner.clone(), op, pld, db_tx);
@@ -103,7 +103,7 @@ impl Core {
                         Err(e) => panic!("{}", e),
                     }
                 }
-                _ => unimplemented!("Errors for invalid host calls not implemented yet"),
+                _ => panic!("Invalid host call"),
             }
         };
 
